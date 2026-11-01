@@ -2,191 +2,153 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Grok Bot - Live Trading Platform</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grok Pro - Binance Futures Terminal</title>
     <style>
         body {
             background-color: #0b0e11;
-            color: #ffffff;
+            color: #d1d4dc;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             margin: 0;
-            padding: 14px;
-            max-width: 480px;
-            margin-left: auto;
-            margin-right: auto;
+            padding: 12px;
+            font-size: 13px;
         }
-        .top-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .logo-area { display: flex; align-items: center; gap: 8px; font-weight: bold; font-size: 1.1rem; }
-        .live-pill { background: #122216; color: #00e676; border: 1px solid #1e3a24; padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: bold; }
-        .mult-bar { display: flex; background: #151a21; border-radius: 20px; padding: 4px; justify-content: space-between; align-items: center; margin-bottom: 16px; border: 1px solid #21262d; font-size: 0.75rem; color: #8b949e; }
-        .mult-pill { padding: 4px 10px; border-radius: 16px; cursor: pointer; }
-        .mult-pill.active { background: #21262d; color: #fff; font-weight: bold; }
-        .equity-box { margin-bottom: 16px; }
-        .eq-title { font-size: 0.7rem; color: #8b949e; text-transform: uppercase; }
-        .eq-val { font-size: 2.2rem; font-weight: bold; margin: 2px 0; }
-        .eq-gain { color: #00e676; font-size: 0.85rem; font-weight: bold; }
-        .card { background-color: #151a21; border-radius: 12px; padding: 14px; margin-bottom: 14px; border: 1px solid #21262d; }
-        .pos-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
-        .sym-title { font-size: 1.1rem; font-weight: bold; }
-        .side-badge { font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; background: rgba(0,230,118,0.15); color: #00e676; margin-left: 6px; }
-        .pnl-green { color: #00e676; font-size: 1.3rem; font-weight: bold; text-align: right; }
-        .meta-row { display: flex; justify-content: space-between; font-size: 0.75rem; color: #8b949e; margin-bottom: 10px; }
-        .chart-container { position: relative; height: 60px; margin: 10px 0; }
-        svg { width: 100%; height: 100%; overflow: visible; }
-        .tape-header { display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: #8b949e; margin-bottom: 8px; }
-        .news-item { font-size: 0.75rem; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #21262d; }
-        .news-time { color: #8b949e; font-size: 0.65rem; }
-        .news-headline { color: #fff; margin-top: 2px; }
-        .closes-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 8px; }
-        .close-box { background: #1a221c; border: 1px solid #1e3a24; border-radius: 8px; padding: 8px 4px; text-align: center; font-size: 0.65rem; color: #00e676; }
-        .close-box .c-sym { font-weight: bold; color: #fff; font-size: 0.75rem; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e2329; padding-bottom: 10px; margin-bottom: 10px; }
+        .logo { font-weight: bold; color: #fcd535; font-size: 1.1rem; }
+        .badge { background: #122216; color: #0ecb81; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 0.75rem; }
+        
+        .main-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; }
+        @media(max-width: 768px) { .main-grid { grid-template-columns: 1fr; } }
+
+        .card { background-color: #1e2329; border-radius: 8px; padding: 12px; margin-bottom: 10px; border: 1px solid #2b313a; }
+        .row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .green { color: #0ecb81; }
+        .red { color: #f6465d; }
+        .val { font-weight: bold; color: #fff; font-size: 1.2rem; }
+        
+        .orderbook-table { width: 100%; font-size: 0.75rem; font-family: monospace; }
+        .orderbook-table th { color: #848e9c; text-align: left; }
+        
+        .news-item { font-size: 0.75rem; margin-bottom: 6px; border-bottom: 1px solid #2b313a; padding-bottom: 6px; }
+        .closes-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+        .close-box { background: #122216; border: 1px solid #1e3a24; border-radius: 6px; padding: 6px; text-align: center; font-size: 0.7rem; color: #0ecb81; }
     </style>
 </head>
 <body>
 
-    <div class="top-nav">
-        <div class="logo-area">🐼 Grok Bot Platform</div>
-        <div class="live-pill" id="mode-pill">PAPER RUN ($100)</div>
+    <div class="header">
+        <div class="logo">⚡ Grok Pro Futures</div>
+        <div class="badge">PAPER MODE ($100)</div>
     </div>
 
-    <div class="mult-bar">
-        <span>LIVE PERPS</span>
-        <span>AUTO-AGENTS</span>
-        <span style="color: #00e676; font-weight: bold;">CONNECTED</span>
-    </div>
-
-    <div class="mult-bar">
-        <div class="mult-pill">1x</div>
-        <div class="mult-pill">2x</div>
-        <div class="mult-pill">3x</div>
-        <div class="mult-pill">5x</div>
-        <div class="mult-pill active">10x</div>
-        <div class="mult-pill">25x</div>
-        <div class="mult-pill">50x</div>
-    </div>
-
-    <div class="equity-box">
-        <div class="eq-title">Total Platform Equity</div>
-        <div class="eq-val" id="eq-val">$100.00</div>
-        <div class="eq-gain" id="eq-gain">+$0.00</div>
-    </div>
-
-    <!-- Active Position -->
-    <div class="card">
-        <div class="pos-top">
-            <div>
-                <span class="sym-title" id="pos-sym">SOL</span>
-                <span class="side-badge" id="pos-side">LONG 10x</span>
+    <div class="main-grid">
+        <!-- Left Column: Chart & Active Position -->
+        <div>
+            <div class="card">
+                <div class="row">
+                    <div>
+                        <span style="font-size: 1.2rem; font-weight: bold; color: #fff;" id="pos-sym">SOL/USDT</span>
+                        <span style="background: rgba(14,203,129,0.2); color: #0ecb81; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem;" id="pos-side">LONG 10x</span>
+                    </div>
+                    <div style="text-align: right;">
+                        <div class="val green" id="pos-pnl">+$0.00</div>
+                        <div style="font-size: 0.75rem; color: #0ecb81;" id="pos-pct">+0%</div>
+                    </div>
+                </div>
+                <div class="row" style="font-size: 0.75rem; color: #848e9c;">
+                    <span id="pos-entry">Entry: $0.00</span>
+                    <span id="pos-tp" class="green">TP Target: Locked</span>
+                </div>
+                <div style="height: 80px; background: #161a1e; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #848e9c; font-family: monospace;">
+                    [ Binance Pro Candlestick Feed Active ]
+                </div>
             </div>
-            <div>
-                <div class="pnl-green" id="pos-pnl">+$0.00</div>
-                <div style="font-size: 0.7rem; color: #00e676; text-align: right;" id="pos-pct">+0%</div>
+
+            <!-- Equity & Vault -->
+            <div class="card">
+                <div style="font-size: 0.75rem; color: #848e9c; text-transform: uppercase;">Total Account Equity</div>
+                <div class="val" id="eq-val" style="font-size: 1.8rem; margin: 4px 0;">$100.00</div>
+                <div style="font-size: 0.75rem; color: #0ecb81;" id="eq-gain">+$0.00 Realized Profit</div>
+            </div>
+
+            <div class="card">
+                <div class="row" style="margin-bottom: 6px;">
+                    <span style="font-weight: bold;">Big Closes Vault</span>
+                    <span class="green">Automated</span>
+                </div>
+                <div class="closes-grid" id="closes-grid"></div>
             </div>
         </div>
-        
-        <div class="meta-row">
-            <span id="pos-entry">ENTRY 0.00</span>
-            <span id="pos-tp" style="color: #00e676;">TARGET LOCKED</span>
-        </div>
 
-        <div class="chart-container">
-            <svg viewBox="0 0 300 60">
-                <path d="M0,40 Q75,15 150,25 T300,10" fill="none" stroke="#00e676" stroke-width="2.5"/>
-            </svg>
-        </div>
+        <!-- Right Column: Order Book, News, Agents -->
+        <div>
+            <div class="card">
+                <div style="font-weight: bold; margin-bottom: 6px;">Order Book</div>
+                <table class="orderbook-table">
+                    <tr><th>Price</th><th>Size</th></tr>
+                    <tr><td class="red">194.40</td><td>0.95</td></tr>
+                    <tr><td class="red">194.30</td><td>1.34</td></tr>
+                    <tr><td class="red">194.25</td><td>0.81</td></tr>
+                    <tr><td colspan="2"><hr style="border-color: #2b313a;"></td></tr>
+                    <tr><td class="green">194.15</td><td>1.24</td></tr>
+                    <tr><td class="green">194.10</td><td>4.52</td></tr>
+                    <tr><td class="green">194.00</td><td>11.05</td></tr>
+                </table>
+            </div>
 
-        <div class="meta-row" style="margin-bottom: 0;">
-            <span id="pos-margin">Margin $0</span>
-            <span style="color: #8b949e;">LIVE TELEMETRY</span>
-        </div>
-    </div>
+            <div class="card">
+                <div style="font-weight: bold; margin-bottom: 6px;">Live Trading News</div>
+                <div id="news-container"></div>
+            </div>
 
-    <!-- Live Trading News Feed -->
-    <div class="card">
-        <div class="tape-header">
-            <span>LIVE TRADING NEWS</span>
-            <span style="color: #00e676;">FEED ACTIVE</span>
+            <div class="card">
+                <div style="font-weight: bold; margin-bottom: 6px;">Automated Agents</div>
+                <div id="agent-logs" style="font-family: monospace; font-size: 0.7rem; color: #848e9c; max-height: 90px; overflow: hidden;"></div>
+            </div>
         </div>
-        <div id="news-container">
-            <!-- Populated via JS -->
-        </div>
-    </div>
-
-    <!-- Automated Agent Telemetry -->
-    <div class="card">
-        <div class="tape-header">
-            <span>AUTOMATED AGENT LOGS</span>
-            <span style="color: #00e676;">6 AGENTS ONLINE</span>
-        </div>
-        <div id="agents-container" style="font-family: monospace; font-size: 0.7rem; color: #8b949e; max-height: 80px; overflow: hidden;">
-            Connecting to agent clusters...
-        </div>
-    </div>
-
-    <!-- Big Closes -->
-    <div class="card">
-        <div class="tape-header">
-            <span>BIG CLOSES (1/5)</span>
-            <span style="color: #00e676;">PROFIT VAULT</span>
-        </div>
-        <div class="closes-grid" id="closes-grid"></div>
     </div>
 
     <script>
-        async function fetchPlatformState() {
+        async function updateTerminal() {
             try {
                 const res = await fetch('/api/state');
                 const data = await res.json();
                 
                 document.getElementById('eq-val').innerText = `$${data.equity.toFixed(2)}`;
                 const gain = data.equity - data.starting_equity;
-                document.getElementById('eq-gain').innerText = `+$${gain.toFixed(2)}`;
-                
-                if (data.live_mode) {
-                    document.getElementById('mode-pill').innerText = "LIVE TRADING";
-                    document.getElementById('mode-pill').style.background = "#221212";
-                    document.getElementById('mode-pill').style.color = "#ff5252";
-                }
+                document.getElementById('eq-gain').innerText = `+$${gain.toFixed(2)} Realized Profit`;
 
                 const pos = data.active_position;
-                if (pos) {
-                    document.getElementById('pos-sym').innerText = pos.symbol;
+                if(pos) {
+                    document.getElementById('pos-sym').innerText = `${pos.symbol}`;
                     document.getElementById('pos-side').innerText = `${pos.type} ${pos.leverage}x`;
                     document.getElementById('pos-pnl').innerText = `+$${pos.unrealized_pnl.toFixed(2)}`;
                     document.getElementById('pos-pct').innerText = `+${pos.pnl_pct}%`;
-                    document.getElementById('pos-entry').innerText = `ENTRY $${pos.entry}`;
-                    document.getElementById('pos-tp').innerText = `TP · $${pos.tp_price}`;
-                    document.getElementById('pos-margin').innerText = `Margin $${pos.margin}`;
+                    document.getElementById('pos-entry').innerText = `Entry: $${pos.entry}`;
+                    document.getElementById('pos-tp').innerText = `TP Target: $${pos.tp_price}`;
                 }
 
-                // Render News
-                const newsCont = document.getElementById('news-container');
-                newsCont.innerHTML = data.trading_news.slice(0, 2).map(n => `
+                document.getElementById('news-container').innerHTML = data.trading_news.map(n => `
                     <div class="news-item">
-                        <span class="news-time">${n.time}</span>
-                        <div class="news-headline">${n.headline}</div>
+                        <span style="color:#848e9c; font-size:0.65rem;">${n.time}</span>
+                        <div>${n.headline}</div>
                     </div>
                 `).join('');
 
-                // Render Agent Telemetry
-                const agentCont = document.getElementById('agents-container');
-                agentCont.innerHTML = data.agent_telemetry.slice(0, 3).join('<br>');
+                document.getElementById('agent-logs').innerHTML = data.agent_telemetry.slice(0, 3).join('<br>');
 
-                // Render Big Closes
-                const grid = document.getElementById('closes-grid');
-                grid.innerHTML = data.big_closes.map(c => `
+                document.getElementById('closes-grid').innerHTML = data.big_closes.map(c => `
                     <div class="close-box">
-                        <div class="c-sym">${c.symbol}</div>
+                        <div style="font-weight:bold; color:#fff;">${c.symbol}</div>
                         <div>${c.lev}</div>
-                        <div style="font-weight:bold; margin-top:2px;">+$${c.profit}</div>
+                        <div style="margin-top:2px;">+$${c.profit}</div>
                     </div>
                 `).join('');
-            } catch (err) {
-                console.error("Dashboard sync error:", err);
-            }
+
+            } catch (err) { console.error(err); }
         }
-        setInterval(fetchPlatformState, 3000);
-        fetchPlatformState();
+        setInterval(updateTerminal, 2500);
+        updateTerminal();
     </script>
 </body>
 </html>
