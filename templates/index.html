@@ -3,115 +3,198 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Grok Bot - Perps</title>
+    <title>Grok Bot - Perps Terminal</title>
     <style>
         body {
             background-color: #0b0e11;
             color: #ffffff;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             margin: 0;
-            padding: 16px;
+            padding: 14px;
+            max-width: 480px;
+            margin-left: auto;
+            margin-right: auto;
         }
-        .header {
+        .top-nav {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 12px;
         }
-        .logo { font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; gap: 6px; }
-        .badge-paper { background: #1a271b; color: #00e676; padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: bold; border: 1px solid #1e3a24; }
-        .equity-section { margin-bottom: 16px; }
-        .equity-title { color: #8b949e; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; }
-        .equity-value { font-size: 2.2rem; font-weight: bold; margin: 2px 0; }
-        .equity-gain { color: #00e676; font-size: 0.85rem; font-weight: 600; }
-        .card { background-color: #151a21; border-radius: 12px; padding: 16px; margin-bottom: 14px; border: 1px solid #21262d; }
-        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .pnl-amount { color: #00e676; font-size: 1.4rem; font-weight: bold; }
-        .closes-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
-        .close-slot { background: #121e17; border: 1px solid #1e3a24; border-radius: 8px; padding: 10px; text-align: center; font-size: 0.75rem; color: #00e676; }
-        .close-slot .sym { font-weight: bold; font-size: 0.85rem; color: #fff; }
-        .tape-box { font-family: monospace; font-size: 0.75rem; color: #8b949e; max-height: 80px; overflow: hidden; }
+        .logo-area { display: flex; align-items: center; gap: 8px; font-weight: bold; font-size: 1.1rem; }
+        .live-pill { background: #122216; color: #00e676; border: 1px solid #1e3a24; padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: bold; }
+        
+        .mult-bar {
+            display: flex;
+            background: #151a21;
+            border-radius: 20px;
+            padding: 4px;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            border: 1px solid #21262d;
+            font-size: 0.75rem;
+            color: #8b949e;
+        }
+        .mult-pill { padding: 4px 10px; border-radius: 16px; cursor: pointer; }
+        .mult-pill.active { background: #21262d; color: #fff; font-weight: bold; }
+
+        .equity-box { margin-bottom: 16px; }
+        .eq-title { font-size: 0.7rem; color: #8b949e; text-transform: uppercase; letter-spacing: 0.5px; }
+        .eq-val { font-size: 2.2rem; font-weight: bold; margin: 2px 0; }
+        .eq-gain { color: #00e676; font-size: 0.85rem; font-weight: bold; }
+
+        .card { background-color: #151a21; border-radius: 12px; padding: 14px; margin-bottom: 14px; border: 1px solid #21262d; }
+        
+        .pos-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+        .sym-title { font-size: 1.1rem; font-weight: bold; }
+        .side-badge { font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; background: rgba(255,82,82,0.15); color: #ff5252; margin-left: 6px; }
+        .pnl-green { color: #00e676; font-size: 1.3rem; font-weight: bold; text-align: right; }
+        
+        .meta-row { display: flex; justify-content: space-between; font-size: 0.75rem; color: #8b949e; margin-bottom: 10px; }
+        
+        .chart-container { position: relative; height: 60px; margin: 10px 0; }
+        svg { width: 100%; height: 100%; overflow: visible; }
+
+        .tape-header { display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: #8b949e; margin-bottom: 8px; }
+        .tape-badges { display: flex; gap: 6px; }
+        .t-badge { background: #1f2630; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; color: #fff; }
+        .t-badge.green { background: #122216; color: #00e676; }
+
+        .histogram { display: flex; align-items: flex-end; gap: 3px; height: 30px; margin-top: 8px; }
+        .bar { flex: 1; background: #21262d; border-radius: 2px; }
+        .bar.green { background: #00e676; }
+
+        .closes-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 8px; }
+        .close-box { background: #1a221c; border: 1px solid #1e3a24; border-radius: 8px; padding: 8px 4px; text-align: center; font-size: 0.65rem; color: #00e676; }
+        .close-box .c-sym { font-weight: bold; color: #fff; font-size: 0.75rem; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <div class="logo">🐼 Grok Bot</div>
-        <div class="badge-paper">PAPER RUN</div>
+    <div class="top-nav">
+        <div class="logo-area">🐼 Grok Bot</div>
+        <div class="live-pill" id="runtime-lbl">LIVE · 01:19 / 22H</div>
     </div>
 
-    <div class="equity-section">
-        <div class="equity-title">Equity</div>
-        <div class="equity-value" id="equity-val">$59.89</div>
-        <div class="equity-gain" id="equity-gain">+$0.00</div>
+    <div class="mult-bar">
+        <span>PERPS</span>
+        <span>LONG/SHORT</span>
+        <span style="color: #00e676; font-weight: bold;">PAPER RUN</span>
     </div>
 
+    <div class="mult-bar">
+        <div class="mult-pill">1x</div>
+        <div class="mult-pill">2x</div>
+        <div class="mult-pill">3x</div>
+        <div class="mult-pill">5x</div>
+        <div class="mult-pill active">10x</div>
+        <div class="mult-pill">25x</div>
+        <div class="mult-pill">50x</div>
+    </div>
+
+    <div class="equity-box">
+        <div class="eq-title">Equity</div>
+        <div class="eq-val" id="eq-val">$59.89</div>
+        <div class="eq-gain" id="eq-gain">+$1</div>
+    </div>
+
+    <!-- Active Position Card -->
     <div class="card">
-        <div class="card-header">
+        <div class="pos-top">
             <div>
-                <span id="pos-symbol" style="font-weight:bold; font-size:1.1rem;">---</span>
-                <span id="pos-side" style="font-size:0.75rem; padding:2px 6px; border-radius:4px; background:#1f2630; color:#8b949e;">---</span>
+                <span class="sym-title" id="pos-sym">XLM</span>
+                <span class="side-badge" id="pos-side">SHORT 10x</span>
             </div>
-            <div id="pos-pnl" class="pnl-amount">+$0.00</div>
+            <div>
+                <div class="pnl-green" id="pos-pnl">+$2.70</div>
+                <div style="font-size: 0.7rem; color: #00e676; text-align: right;" id="pos-pct">+7%</div>
+            </div>
         </div>
-        <div style="font-size: 0.8rem; color: #8b949e;" id="pos-details">Initializing perp market feeds...</div>
+        
+        <div class="meta-row">
+            <span id="pos-entry">ENTRY 0.39466</span>
+            <span id="pos-tp" style="color: #00e676;">TP HIT · $0.17830</span>
+        </div>
+
+        <div class="chart-container">
+            <svg viewBox="0 0 300 60">
+                <path d="M0,10 Q75,40 150,25 T300,50" fill="none" stroke="#00e676" stroke-width="2.5"/>
+            </svg>
+        </div>
+
+        <div class="meta-row" style="margin-bottom: 0;">
+            <span id="pos-margin">Margin $17</span>
+            <span style="color: #8b949e;" id="pos-unrealized">UNREALIZED</span>
+        </div>
     </div>
 
+    <!-- Trade Tape Card -->
     <div class="card">
-        <div style="font-size: 0.75rem; color: #8b949e; text-transform: uppercase; margin-bottom: 8px;">Big Closes</div>
+        <div class="tape-header">
+            <span>TRADE TAPE</span>
+            <div class="tape-badges">
+                <span class="t-badge">3V</span>
+                <span class="t-badge">6L</span>
+                <span class="t-badge green">100%</span>
+            </div>
+        </div>
+        <div class="histogram">
+            <div class="bar" style="height: 30%;"></div>
+            <div class="bar" style="height: 50%;"></div>
+            <div class="bar green" style="height: 90%;"></div>
+            <div class="bar" style="height: 40%;"></div>
+            <div class="bar" style="height: 60%;"></div>
+            <div class="bar green" style="height: 100%;"></div>
+            <div class="bar" style="height: 45%;"></div>
+        </div>
+    </div>
+
+    <!-- Big Closes Card -->
+    <div class="card">
+        <div class="tape-header">
+            <span>BIG CLOSES (1/5)</span>
+            <span style="color: #00e676;" id="total-profit">+ $891</span>
+        </div>
         <div class="closes-grid" id="closes-grid">
-            <div class="close-slot" style="background:#151a21; border-color:#21262d; color:#484f58;">?</div>
-            <div class="close-slot" style="background:#151a21; border-color:#21262d; color:#484f58;">?</div>
-            <div class="close-slot" style="background:#151a21; border-color:#21262d; color:#484f58;">?</div>
+            <!-- Populated via JS -->
         </div>
-    </div>
-
-    <div class="card">
-        <div style="font-size: 0.75rem; color: #8b949e; text-transform: uppercase; margin-bottom: 6px;">Trade Tape</div>
-        <div class="tape-box" id="trade-tape">Connecting to order stream...</div>
     </div>
 
     <script>
-        async function refreshDashboard() {
+        async function fetchState() {
             try {
                 const res = await fetch('/api/state');
                 const data = await res.json();
                 
-                document.getElementById('equity-val').innerText = `$${data.equity.toFixed(2)}`;
+                document.getElementById('eq-val').innerText = `$${data.equity.toFixed(2)}`;
                 const gain = data.equity - data.starting_equity;
-                document.getElementById('equity-gain').innerText = `+$${gain.toFixed(2)}`;
+                document.getElementById('eq-gain').innerText = `+$${gain.toFixed(0)}`;
 
-                if (data.active_position) {
-                    const pos = data.active_position;
-                    document.getElementById('pos-symbol').innerText = `${pos.symbol} PERP`;
-                    document.getElementById('pos-side').innerText = `${pos.side} ${pos.leverage}x`;
-                    document.getElementById('pos-pnl').innerText = `+$${pos.unrealized_pnl.toFixed(2)}`;
-                    document.getElementById('pos-details').innerText = `Entry: $${pos.entry_price} | Return: +${(pos.pnl_pct*100).toFixed(1)}%`;
-                } else {
-                    document.getElementById('pos-symbol').innerText = "SCANNING";
-                    document.getElementById('pos-side').innerText = "IDLE";
-                    document.getElementById('pos-pnl').innerText = "$0.00";
-                    document.getElementById('pos-details').innerText = "Searching high-conviction perp setups...";
-                }
+                const pos = data.active_position;
+                document.getElementById('pos-sym').innerText = pos.symbol;
+                document.getElementById('pos-side').innerText = `${pos.type} ${pos.leverage}x`;
+                document.getElementById('pos-pnl').innerText = `+$${pos.unrealized_pnl.toFixed(2)}`;
+                document.getElementById('pos-pct').innerText = `+${pos.pnl_pct}%`;
+                document.getElementById('pos-entry').innerText = `ENTRY ${pos.entry}`;
+                document.getElementById('pos-tp').innerText = `TP HIT · $${pos.tp_price}`;
+                document.getElementById('pos-margin').innerText = `Margin $${pos.margin}`;
 
                 const grid = document.getElementById('closes-grid');
-                if (data.big_closes.length > 0) {
-                    grid.innerHTML = data.big_closes.slice(0, 3).map(c => `
-                        <div class="close-slot">
-                            <span class="sym">${c.symbol}</span><br>+$${c.profit.toFixed(0)}
-                        </div>
-                    `).join('');
-                }
-
-                const tape = document.getElementById('trade-tape');
-                tape.innerHTML = data.trade_tape.slice(0, 3).join('<br>');
+                grid.innerHTML = data.big_closes.map(c => `
+                    <div class="close-box">
+                        <div class="c-sym">${c.symbol}</div>
+                        <div>${c.lev}</div>
+                        <div style="font-weight:bold; margin-top:2px;">+$${c.profit}</div>
+                    </div>
+                `).join('');
 
             } catch (err) {
                 console.error(err);
             }
         }
-        setInterval(refreshDashboard, 3000);
-        refreshDashboard();
+        setInterval(fetchState, 3000);
+        fetchState();
     </script>
 </body>
 </html>

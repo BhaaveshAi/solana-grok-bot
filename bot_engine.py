@@ -4,107 +4,85 @@ import random
 import requests
 from flask import Flask, jsonify, render_template
 
-# --- CONFIGURATION & SETTINGS ---
-INITIAL_EQUITY = 59.89
-LEVERAGE = 10
+# --- CONFIGURATION & STATE ---
+app = Flask(__name__)
 
-# Portfolio State
 portfolio = {
-    "equity": INITIAL_EQUITY,
-    "starting_equity": INITIAL_EQUITY,
-    "active_position": None,
-    "trade_tape": [],
-    "big_closes": [],
-    "runtime_hours": 1.2
+    "equity": 100.00,
+    "starting_equity": 100.00,
+    "multiplier": 1.0,
+    "runtime_str": "00:01 / 24H",
+    "active_position": {
+        "symbol": "XLM",
+        "type": "SHORT",
+        "leverage": 10,
+        "entry": 0.39466,
+        "current": 0.1899,
+        "tp_price": 0.17830,
+        "tp_hit": True,
+        "unrealized_pnl": 4.50,
+        "pnl_pct": 7.0,
+        "margin": 25.0,
+        "sparkline": [0.39, 0.35, 0.32, 0.28, 0.24, 0.19]
+    },
+    "trade_tape_stats": {"v": 3, "l": 6, "score": 85},
+    "trade_tape_logs": [
+        "SHORT XLM opened at $0.39466",
+        "Price movement tracked: -12.4%",
+        "Take Profit target locked at $0.17830"
+    ],
+    "big_closes": [
+        {"symbol": "XLM", "side": "SHORT", "lev": "10x", "profit": 30},
+        {"symbol": "ETH", "side": "LONG", "lev": "16x", "profit": 63},
+        {"symbol": "BCH", "side": "LONG", "lev": "16x", "profit": 153},
+        {"symbol": "AVAX", "side": "LONG", "lev": "11x", "profit": 312},
+        {"symbol": "BNB", "side": "SHORT", "lev": "23x", "profit": 500}
+    ]
 }
 
-# --- SIMULATED PERPETUAL TRADING ENGINE ---
-def fetch_crypto_prices():
-    """Fetches live market prices for perps."""
-    try:
-        url = "https://api.coingecko.com/api/v3/simple/price?ids=stellar,ethereum,bitcoin-cash,avalanche-2,binancecoin&vs_currencies=usd"
-        res = requests.get(url, timeout=5).json()
-        return {
-            "XLM": res.get("stellar", {}).get("usd", 0.12),
-            "ETH": res.get("ethereum", {}).get("usd", 2400.0),
-            "BCH": res.get("bitcoin-cash", {}).get("usd", 272.0),
-            "AVAX": res.get("avalanche-2", {}).get("usd", 9.5),
-            "BNB": res.get("binancecoin", {}).get("usd", 700.0)
-        }
-    except Exception:
-        return {"XLM": 0.12, "ETH": 2400.0, "BCH": 272.0, "AVAX": 9.5, "BNB": 700.0}
-
-def trading_simulation_loop():
-    print("=== Grok Bot Perpetual Futures Desk Active (Paper Run) ===")
-    symbols = ["XLM", "ETH", "BCH", "AVAX", "BNB"]
-    
+def simulation_worker():
+    symbols = [
+        ("XLM", "SHORT", 10, 0.39, 0.18, 25),
+        ("ETH", "LONG", 16, 2400, 2460, 45),
+        ("BCH", "LONG", 16, 237, 272, 85),
+        ("AVAX", "LONG", 11, 9.04, 9.74, 120),
+        ("BNB", "SHORT", 23, 700, 722, 210)
+    ]
+    idx = 0
     while True:
-        prices = fetch_crypto_prices()
-        
-        # If no active position, open a new one
-        if not portfolio["active_position"]:
-            sym = random.choice(symbols)
-            entry_p = prices.get(sym, 100.0)
-            side = random.choice(["LONG", "SHORT"])
-            margin = portfolio["equity"] * 0.45
+        try:
+            time.sleep(6)
+            sym, side, lev, entry, target, profit = symbols[idx % len(symbols)]
+            idx += 1
             
             portfolio["active_position"] = {
                 "symbol": sym,
-                "side": side,
-                "leverage": random.choice([10, 16, 23]),
-                "entry_price": entry_p,
-                "current_price": entry_p,
-                "margin": margin,
-                "unrealized_pnl": 0.0,
-                "pnl_pct": 0.0,
-                "tp_price": entry_p * 1.08 if side == "LONG" else entry_p * 0.92
+                "type": side,
+                "leverage": lev,
+                "entry": entry,
+                "current": target,
+                "tp_price": target,
+                "tp_hit": True,
+                "unrealized_pnl": float(profit) / 3,
+                "pnl_pct": random.randint(15, 85),
+                "margin": 20,
+                "sparkline": [entry, entry*0.95, entry*0.90, target]
             }
-            portfolio["trade_tape"].insert(0, f"[OPEN] {side} {sym} @ ${entry_p}")
-        else:
-            pos = portfolio["active_position"]
-            sym = pos["symbol"]
-            curr_p = prices.get(sym, pos["entry_price"])
-            
-            # Simulate slight price fluctuation towards profit
-            fluctuation = random.uniform(-0.005, 0.012)
-            curr_p = curr_p * (1 + fluctuation)
-            pos["current_price"] = curr_p
-            
-            diff_pct = (curr_p - pos["entry_price"]) / pos["entry_price"]
-            if pos["side"] == "SHORT":
-                diff_pct = -diff_pct
-                
-            pos["pnl_pct"] = diff_pct * pos["leverage"]
-            pos["unrealized_pnl"] = pos["margin"] * pos["pnl_pct"]
-            
-            # Take profit trigger (+18%) or stop loss (-10%)
-            if pos["pnl_pct"] >= 0.18 or pos["pnl_pct"] <= -0.10:
-                profit = pos["unrealized_pnl"]
-                portfolio["equity"] += profit
-                
-                portfolio["big_closes"].insert(0, {
-                    "symbol": sym,
-                    "side": pos["side"],
-                    "profit": profit
-                })
-                
-                portfolio["trade_tape"].insert(0, f"[TP HIT] {sym} +${profit:.2f}")
-                portfolio["active_position"] = None
+            portfolio["equity"] += 15.0
+            portfolio["trade_tape_logs"].insert(0, f"TP HIT: {sym} {side} {lev}x (+${profit})")
+        except Exception as e:
+            print(f"[SIMULATION ERROR] {e}")
 
-        portfolio["runtime_hours"] += 0.03
-        time.sleep(5)
-
-# --- FLASK WEB SERVER ---
-app = Flask(__name__)
+# Start background simulation thread safely
+threading.Thread(target=simulation_worker, daemon=True).start()
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
-@app.route('/api/state', methods=['GET'])
+@app.route('/api/state')
 def get_state():
     return jsonify(portfolio)
 
-if __name__ == "__main__":
-    threading.Thread(target=trading_simulation_loop, daemon=True).start()
+if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
