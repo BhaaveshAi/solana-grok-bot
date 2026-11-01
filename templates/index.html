@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Grok Bot - Perps Terminal</title>
+    <title>Grok Bot - Live Trading Platform</title>
     <style>
         body {
             background-color: #0b0e11;
@@ -34,12 +34,9 @@
         .chart-container { position: relative; height: 60px; margin: 10px 0; }
         svg { width: 100%; height: 100%; overflow: visible; }
         .tape-header { display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: #8b949e; margin-bottom: 8px; }
-        .tape-badges { display: flex; gap: 6px; }
-        .t-badge { background: #1f2630; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; color: #fff; }
-        .t-badge.green { background: #122216; color: #00e676; }
-        .histogram { display: flex; align-items: flex-end; gap: 3px; height: 30px; margin-top: 8px; }
-        .bar { flex: 1; background: #21262d; border-radius: 2px; }
-        .bar.green { background: #00e676; }
+        .news-item { font-size: 0.75rem; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #21262d; }
+        .news-time { color: #8b949e; font-size: 0.65rem; }
+        .news-headline { color: #fff; margin-top: 2px; }
         .closes-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 8px; }
         .close-box { background: #1a221c; border: 1px solid #1e3a24; border-radius: 8px; padding: 8px 4px; text-align: center; font-size: 0.65rem; color: #00e676; }
         .close-box .c-sym { font-weight: bold; color: #fff; font-size: 0.75rem; }
@@ -48,14 +45,14 @@
 <body>
 
     <div class="top-nav">
-        <div class="logo-area">🐼 Grok Bot</div>
-        <div class="live-pill" id="mode-badge">PAPER RUN ($100)</div>
+        <div class="logo-area">🐼 Grok Bot Platform</div>
+        <div class="live-pill" id="mode-pill">PAPER RUN ($100)</div>
     </div>
 
     <div class="mult-bar">
-        <span>PERPS</span>
-        <span>LONG/SHORT</span>
-        <span style="color: #00e676; font-weight: bold;" id="status-label">ACTIVE</span>
+        <span>LIVE PERPS</span>
+        <span>AUTO-AGENTS</span>
+        <span style="color: #00e676; font-weight: bold;">CONNECTED</span>
     </div>
 
     <div class="mult-bar">
@@ -69,16 +66,17 @@
     </div>
 
     <div class="equity-box">
-        <div class="eq-title">Equity</div>
+        <div class="eq-title">Total Platform Equity</div>
         <div class="eq-val" id="eq-val">$100.00</div>
         <div class="eq-gain" id="eq-gain">+$0.00</div>
     </div>
 
+    <!-- Active Position -->
     <div class="card">
         <div class="pos-top">
             <div>
-                <span class="sym-title" id="pos-sym">---</span>
-                <span class="side-badge" id="pos-side">---</span>
+                <span class="sym-title" id="pos-sym">SOL</span>
+                <span class="side-badge" id="pos-side">LONG 10x</span>
             </div>
             <div>
                 <div class="pnl-green" id="pos-pnl">+$0.00</div>
@@ -88,51 +86,54 @@
         
         <div class="meta-row">
             <span id="pos-entry">ENTRY 0.00</span>
-            <span id="pos-tp" style="color: #00e676;">SCANNING...</span>
+            <span id="pos-tp" style="color: #00e676;">TARGET LOCKED</span>
         </div>
 
         <div class="chart-container">
             <svg viewBox="0 0 300 60">
-                <path d="M0,40 Q75,10 150,30 T300,20" fill="none" stroke="#00e676" stroke-width="2.5"/>
+                <path d="M0,40 Q75,15 150,25 T300,10" fill="none" stroke="#00e676" stroke-width="2.5"/>
             </svg>
         </div>
 
         <div class="meta-row" style="margin-bottom: 0;">
             <span id="pos-margin">Margin $0</span>
-            <span style="color: #8b949e;">UNREALIZED PnL</span>
+            <span style="color: #8b949e;">LIVE TELEMETRY</span>
         </div>
     </div>
 
+    <!-- Live Trading News Feed -->
     <div class="card">
         <div class="tape-header">
-            <span>TRADE TAPE</span>
-            <div class="tape-badges">
-                <span class="t-badge">3V</span>
-                <span class="t-badge">6L</span>
-                <span class="t-badge green">100%</span>
-            </div>
+            <span>LIVE TRADING NEWS</span>
+            <span style="color: #00e676;">FEED ACTIVE</span>
         </div>
-        <div class="histogram">
-            <div class="bar" style="height: 30%;"></div>
-            <div class="bar" style="height: 50%;"></div>
-            <div class="bar green" style="height: 90%;"></div>
-            <div class="bar" style="height: 40%;"></div>
-            <div class="bar" style="height: 60%;"></div>
-            <div class="bar green" style="height: 100%;"></div>
-            <div class="bar" style="height: 45%;"></div>
+        <div id="news-container">
+            <!-- Populated via JS -->
         </div>
     </div>
 
+    <!-- Automated Agent Telemetry -->
+    <div class="card">
+        <div class="tape-header">
+            <span>AUTOMATED AGENT LOGS</span>
+            <span style="color: #00e676;">6 AGENTS ONLINE</span>
+        </div>
+        <div id="agents-container" style="font-family: monospace; font-size: 0.7rem; color: #8b949e; max-height: 80px; overflow: hidden;">
+            Connecting to agent clusters...
+        </div>
+    </div>
+
+    <!-- Big Closes -->
     <div class="card">
         <div class="tape-header">
             <span>BIG CLOSES (1/5)</span>
-            <span style="color: #00e676;" id="total-profit">ACTIVE</span>
+            <span style="color: #00e676;">PROFIT VAULT</span>
         </div>
         <div class="closes-grid" id="closes-grid"></div>
     </div>
 
     <script>
-        async function fetchState() {
+        async function fetchPlatformState() {
             try {
                 const res = await fetch('/api/state');
                 const data = await res.json();
@@ -142,9 +143,9 @@
                 document.getElementById('eq-gain').innerText = `+$${gain.toFixed(2)}`;
                 
                 if (data.live_mode) {
-                    document.getElementById('mode-badge').innerText = "LIVE TRADING";
-                    document.getElementById('mode-badge').style.background = "#221212";
-                    document.getElementById('mode-badge').style.color = "#ff5252";
+                    document.getElementById('mode-pill').innerText = "LIVE TRADING";
+                    document.getElementById('mode-pill').style.background = "#221212";
+                    document.getElementById('mode-pill').style.color = "#ff5252";
                 }
 
                 const pos = data.active_position;
@@ -153,11 +154,25 @@
                     document.getElementById('pos-side').innerText = `${pos.type} ${pos.leverage}x`;
                     document.getElementById('pos-pnl').innerText = `+$${pos.unrealized_pnl.toFixed(2)}`;
                     document.getElementById('pos-pct').innerText = `+${pos.pnl_pct}%`;
-                    document.getElementById('pos-entry').innerText = `ENTRY ${pos.entry}`;
-                    document.getElementById('pos-tp').innerText = pos.tp_hit ? `TP HIT · $${pos.tp_price}` : `TARGET · $${pos.tp_price}`;
+                    document.getElementById('pos-entry').innerText = `ENTRY $${pos.entry}`;
+                    document.getElementById('pos-tp').innerText = `TP · $${pos.tp_price}`;
                     document.getElementById('pos-margin').innerText = `Margin $${pos.margin}`;
                 }
 
+                // Render News
+                const newsCont = document.getElementById('news-container');
+                newsCont.innerHTML = data.trading_news.slice(0, 2).map(n => `
+                    <div class="news-item">
+                        <span class="news-time">${n.time}</span>
+                        <div class="news-headline">${n.headline}</div>
+                    </div>
+                `).join('');
+
+                // Render Agent Telemetry
+                const agentCont = document.getElementById('agents-container');
+                agentCont.innerHTML = data.agent_telemetry.slice(0, 3).join('<br>');
+
+                // Render Big Closes
                 const grid = document.getElementById('closes-grid');
                 grid.innerHTML = data.big_closes.map(c => `
                     <div class="close-box">
@@ -167,11 +182,11 @@
                     </div>
                 `).join('');
             } catch (err) {
-                console.error(err);
+                console.error("Dashboard sync error:", err);
             }
         }
-        setInterval(fetchState, 3000);
-        fetchState();
+        setInterval(fetchPlatformState, 3000);
+        fetchPlatformState();
     </script>
 </body>
 </html>

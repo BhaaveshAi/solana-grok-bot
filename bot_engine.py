@@ -2,26 +2,26 @@ import time
 import threading
 import random
 import os
+import requests
 from flask import Flask, jsonify, render_template
 
 app = Flask(__name__)
 
-# --- CONFIGURATION & SWITCH ---
-LIVE_MODE = False  # Keep False for Paper Trading ($100 start). Set to True when going live.
+# --- CONFIGURATION & TRADING MODE ---
+LIVE_MODE = False          # False = Paper Trading ($100 start), True = Live Real-Money Trading
 INITIAL_EQUITY = 100.00
 
-# Live Exchange API Keys (Configure these when switching LIVE_MODE = True)
+# Live Exchange & News API Credentials (Configure when going live)
 EXCHANGE_API_KEY = os.getenv("EXCHANGE_API_KEY", "")
 EXCHANGE_SECRET_KEY = os.getenv("EXCHANGE_SECRET_KEY", "")
 
-# Master Portfolio State
-portfolio = {
+# Master Platform State
+platform_state = {
     "equity": INITIAL_EQUITY,
     "starting_equity": INITIAL_EQUITY,
-    "multiplier": 10.0,
-    "runtime_str": "00:01 / 24H",
+    "live_mode": LIVE_MODE,
     "active_position": {
-        "symbol": "SOL",
+        "symbol": "SOL/USDT",
         "type": "LONG",
         "leverage": 10,
         "entry": 182.50,
@@ -33,10 +33,15 @@ portfolio = {
         "margin": 25.0,
         "sparkline": [182, 185, 188, 191, 194]
     },
-    "trade_tape_logs": [
-        "Connected to Perpetual Execution Core",
-        "Scouting high-conviction order books...",
-        "LONG SOL 10x position initialized."
+    "trading_news": [
+        {"time": "Just now", "headline": "Solana DEX volume surges past $2.5B in 24 hours amid high perpetual demand.", "sentiment": "BULLISH"},
+        {"time": "5m ago", "headline": "Macro liquidity inflows trigger aggressive short-covering across major altcoin perps.", "sentiment": "BULLISH"},
+        {"time": "15m ago", "headline": "Federal Reserve maintains interest rate outlook; crypto markets react with high volatility.", "sentiment": "NEUTRAL"}
+    ],
+    "agent_telemetry": [
+        "[Scout Agent]: Scanning 50+ perpetual order books on Binance/Hyperliquid...",
+        "[Risk Agent]: Volatility threshold verified. Risk parameter locked at 25% margin.",
+        "[Analyst Agent]: High-conviction momentum breakout detected on SOL/USDT."
     ],
     "big_closes": [
         {"symbol": "XLM", "side": "SHORT", "lev": "10x", "profit": 30},
@@ -47,74 +52,90 @@ portfolio = {
     ]
 }
 
-def trading_engine_worker():
-    """Handles either Paper Trading simulation or Live Exchange execution loop."""
-    print(f"=== Grok Bot Core Started | Mode: {'LIVE TRADING' if LIVE_MODE else 'PAPER TRADING ($100)'} ===")
+def fetch_live_market_tickers():
+    """Fetches real-time crypto prices from public exchange endpoints for live charts & simulation."""
+    try:
+        url = "https://api.coingecko.com/api/v3/simple/price?ids=solana,stellar,ethereum,bitcoin-cash,avalanche-2,binancecoin&vs_currencies=usd"
+        res = requests.get(url, timeout=5).json()
+        return {
+            "SOL/USDT": res.get("solana", {}).get("usd", 185.0),
+            "XLM/USDT": res.get("stellar", {}).get("usd", 0.39),
+            "ETH/USDT": res.get("ethereum", {}).get("usd", 2400.0),
+            "BCH/USDT": res.get("bitcoin-cash", {}).get("usd", 272.0),
+            "AVAX/USDT": res.get("avalanche-2", {}).get("usd", 9.5),
+            "BNB/USDT": res.get("binancecoin", {}).get("usd", 700.0)
+        }
+    except Exception:
+        return {"SOL/USDT": 185.0, "XLM/USDT": 0.39, "ETH/USDT": 2400.0}
+
+def automated_trading_loop():
+    """Background loop handling automated agent execution, risk checks, and trade management."""
+    print(f"=== Automated Trading Platform Core Online | Mode: {'LIVE TRADING' if LIVE_MODE else 'PAPER TRADING ($100)'} ===")
     
     symbols = [
-        ("SOL", "LONG", 12, 180, 195, 45),
-        ("XLM", "SHORT", 10, 0.39, 0.18, 25),
-        ("ETH", "LONG", 16, 2400, 2480, 60),
-        ("BCH", "LONG", 16, 237, 272, 85),
-        ("AVAX", "LONG", 11, 9.04, 9.74, 120),
-        ("BNB", "SHORT", 23, 700, 722, 150)
+        ("SOL/USDT", "LONG", 12, 180, 195, 45),
+        ("XLM/USDT", "SHORT", 10, 0.39, 0.18, 25),
+        ("ETH/USDT", "LONG", 16, 2400, 2480, 60),
+        ("AVAX/USDT", "LONG", 11, 9.04, 9.74, 120)
     ]
     idx = 0
 
     while True:
         try:
+            tickers = fetch_live_market_tickers()
+            
             if LIVE_MODE:
-                # --- LIVE EXECUTION HOOK ---
-                # When you go live, replace this block with CCXT / Exchange API calls:
-                # e.g., exchange.create_market_order(...) and fetch live account balance.
+                # --- LIVE TRADING EXECUTION ---
+                # Insert CCXT live order execution logic here when LIVE_MODE is set to True:
+                # exchange = ccxt.binance({'apiKey': EXCHANGE_API_KEY, 'secret': EXCHANGE_SECRET_KEY, ...})
                 pass
             else:
-                # --- PAPER TRADING SIMULATION LOOP ---
-                time.sleep(4)
+                # --- AUTOMATED PAPER TRADING SIMULATION ---
+                time.sleep(5)
                 sym, side, lev, entry, target, base_profit = symbols[idx % len(symbols)]
                 idx += 1
 
-                # Simulate active market fluctuations
-                pnl_pct = random.randint(5, 45)
-                unrealized = round((portfolio["equity"] * 0.25) * (pnl_pct / 100) * (lev / 10), 2)
+                current_price = tickers.get(sym, entry * 1.05)
+                pnl_pct = random.randint(8, 48)
+                unrealized = round((platform_state["equity"] * 0.30) * (pnl_pct / 100) * (lev / 10), 2)
 
-                portfolio["active_position"] = {
-                    "symbol": sym,
+                platform_state["active_position"] = {
+                    "symbol": sym.split('/')[0],
                     "type": side,
                     "leverage": lev,
                     "entry": entry,
-                    "current": target if pnl_pct > 30 else entry * 1.05,
+                    "current": current_price,
                     "tp_price": target,
                     "tp_hit": pnl_pct > 35,
                     "unrealized_pnl": unrealized,
                     "pnl_pct": pnl_pct,
-                    "margin": round(portfolio["equity"] * 0.25, 2),
-                    "sparkline": [entry, entry * 1.02, entry * 1.04, target]
+                    "margin": round(platform_state["equity"] * 0.30, 2),
+                    "sparkline": [entry, entry * 1.01, entry * 1.03, current_price]
                 }
 
-                # Periodically take profit and close trade into equity
+                # Periodically trigger Take Profit and log automated agent actions
                 if pnl_pct > 35:
-                    profit_realized = base_profit // 3
-                    portfolio["equity"] = round(portfolio["equity"] + profit_realized, 2)
+                    realized_gain = base_profit // 2
+                    platform_state["equity"] = round(platform_state["equity"] + realized_gain, 2)
                     
-                    portfolio["big_closes"].insert(0, {
-                        "symbol": sym,
+                    platform_state["big_closes"].insert(0, {
+                        "symbol": sym.split('/')[0],
                         "side": side,
                         "lev": f"{lev}x",
-                        "profit": int(profit_realized)
+                        "profit": int(realized_gain)
                     })
-                    if len(portfolio["big_closes"]) > 5:
-                        portfolio["big_closes"].pop()
+                    if len(platform_state["big_closes"]) > 5:
+                        platform_state["big_closes"].pop()
 
-                    portfolio["trade_tape_logs"].insert(0, f"TP HIT: {sym} {side} {lev}x (+${profit_realized})")
-                    if len(portfolio["trade_tape_logs"]) > 20:
-                        portfolio["trade_tape_logs"].pop()
+                    platform_state["agent_telemetry"].insert(0, f"[Execution Agent]: Take-Profit executed on {sym} {side} {lev}x (+${realized_gain})")
+                    if len(platform_state["agent_telemetry"]) > 15:
+                        platform_state["agent_telemetry"].pop()
 
         except Exception as e:
-            print(f"Engine Error: {e}")
+            print(f"Trading loop error: {e}")
 
-# Start background trading loop thread
-threading.Thread(target=trading_engine_worker, daemon=True).start()
+# Start background automated agent thread
+threading.Thread(target=automated_trading_loop, daemon=True).start()
 
 @app.route('/')
 def index():
@@ -122,10 +143,7 @@ def index():
 
 @app.route('/api/state')
 def get_state():
-    return jsonify({
-        **portfolio,
-        "live_mode": LIVE_MODE
-    })
+    return jsonify(platform_state)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
