@@ -28,7 +28,7 @@
         .card { background-color: #151a21; border-radius: 12px; padding: 14px; margin-bottom: 14px; border: 1px solid #21262d; }
         .pos-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
         .sym-title { font-size: 1.1rem; font-weight: bold; }
-        .side-badge { font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; background: rgba(255,82,82,0.15); color: #ff5252; margin-left: 6px; }
+        .side-badge { font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; background: rgba(0,230,118,0.15); color: #00e676; margin-left: 6px; }
         .pnl-green { color: #00e676; font-size: 1.3rem; font-weight: bold; text-align: right; }
         .meta-row { display: flex; justify-content: space-between; font-size: 0.75rem; color: #8b949e; margin-bottom: 10px; }
         .chart-container { position: relative; height: 60px; margin: 10px 0; }
@@ -49,13 +49,13 @@
 
     <div class="top-nav">
         <div class="logo-area">🐼 Grok Bot</div>
-        <div class="live-pill">LIVE · 24H</div>
+        <div class="live-pill" id="mode-badge">PAPER RUN ($100)</div>
     </div>
 
     <div class="mult-bar">
         <span>PERPS</span>
         <span>LONG/SHORT</span>
-        <span style="color: #00e676; font-weight: bold;">PAPER RUN</span>
+        <span style="color: #00e676; font-weight: bold;" id="status-label">ACTIVE</span>
     </div>
 
     <div class="mult-bar">
@@ -77,8 +77,8 @@
     <div class="card">
         <div class="pos-top">
             <div>
-                <span class="sym-title" id="pos-sym">XLM</span>
-                <span class="side-badge" id="pos-side">SHORT 10x</span>
+                <span class="sym-title" id="pos-sym">---</span>
+                <span class="side-badge" id="pos-side">---</span>
             </div>
             <div>
                 <div class="pnl-green" id="pos-pnl">+$0.00</div>
@@ -87,19 +87,19 @@
         </div>
         
         <div class="meta-row">
-            <span id="pos-entry">ENTRY 0.39466</span>
-            <span id="pos-tp" style="color: #00e676;">TP HIT · $0.17830</span>
+            <span id="pos-entry">ENTRY 0.00</span>
+            <span id="pos-tp" style="color: #00e676;">SCANNING...</span>
         </div>
 
         <div class="chart-container">
             <svg viewBox="0 0 300 60">
-                <path d="M0,10 Q75,40 150,25 T300,50" fill="none" stroke="#00e676" stroke-width="2.5"/>
+                <path d="M0,40 Q75,10 150,30 T300,20" fill="none" stroke="#00e676" stroke-width="2.5"/>
             </svg>
         </div>
 
         <div class="meta-row" style="margin-bottom: 0;">
-            <span id="pos-margin">Margin $20</span>
-            <span style="color: #8b949e;">UNREALIZED</span>
+            <span id="pos-margin">Margin $0</span>
+            <span style="color: #8b949e;">UNREALIZED PnL</span>
         </div>
     </div>
 
@@ -126,7 +126,7 @@
     <div class="card">
         <div class="tape-header">
             <span>BIG CLOSES (1/5)</span>
-            <span style="color: #00e676;" id="total-profit">+ $500</span>
+            <span style="color: #00e676;" id="total-profit">ACTIVE</span>
         </div>
         <div class="closes-grid" id="closes-grid"></div>
     </div>
@@ -139,16 +139,24 @@
                 
                 document.getElementById('eq-val').innerText = `$${data.equity.toFixed(2)}`;
                 const gain = data.equity - data.starting_equity;
-                document.getElementById('eq-gain').innerText = `+$${gain.toFixed(0)}`;
+                document.getElementById('eq-gain').innerText = `+$${gain.toFixed(2)}`;
+                
+                if (data.live_mode) {
+                    document.getElementById('mode-badge').innerText = "LIVE TRADING";
+                    document.getElementById('mode-badge').style.background = "#221212";
+                    document.getElementById('mode-badge').style.color = "#ff5252";
+                }
 
                 const pos = data.active_position;
-                document.getElementById('pos-sym').innerText = pos.symbol;
-                document.getElementById('pos-side').innerText = `${pos.type} ${pos.leverage}x`;
-                document.getElementById('pos-pnl').innerText = `+$${pos.unrealized_pnl.toFixed(2)}`;
-                document.getElementById('pos-pct').innerText = `+${pos.pnl_pct}%`;
-                document.getElementById('pos-entry').innerText = `ENTRY ${pos.entry}`;
-                document.getElementById('pos-tp').innerText = `TP HIT · $${pos.tp_price}`;
-                document.getElementById('pos-margin').innerText = `Margin $${pos.margin}`;
+                if (pos) {
+                    document.getElementById('pos-sym').innerText = pos.symbol;
+                    document.getElementById('pos-side').innerText = `${pos.type} ${pos.leverage}x`;
+                    document.getElementById('pos-pnl').innerText = `+$${pos.unrealized_pnl.toFixed(2)}`;
+                    document.getElementById('pos-pct').innerText = `+${pos.pnl_pct}%`;
+                    document.getElementById('pos-entry').innerText = `ENTRY ${pos.entry}`;
+                    document.getElementById('pos-tp').innerText = pos.tp_hit ? `TP HIT · $${pos.tp_price}` : `TARGET · $${pos.tp_price}`;
+                    document.getElementById('pos-margin').innerText = `Margin $${pos.margin}`;
+                }
 
                 const grid = document.getElementById('closes-grid');
                 grid.innerHTML = data.big_closes.map(c => `

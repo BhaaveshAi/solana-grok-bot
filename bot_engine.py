@@ -1,33 +1,42 @@
 import time
 import threading
 import random
+import os
 from flask import Flask, jsonify, render_template
 
 app = Flask(__name__)
 
-# --- PAPER TRADING DESK STATE ($100.00 START) ---
+# --- CONFIGURATION & SWITCH ---
+LIVE_MODE = False  # Keep False for Paper Trading ($100 start). Set to True when going live.
+INITIAL_EQUITY = 100.00
+
+# Live Exchange API Keys (Configure these when switching LIVE_MODE = True)
+EXCHANGE_API_KEY = os.getenv("EXCHANGE_API_KEY", "")
+EXCHANGE_SECRET_KEY = os.getenv("EXCHANGE_SECRET_KEY", "")
+
+# Master Portfolio State
 portfolio = {
-    "equity": 100.00,
-    "starting_equity": 100.00,
+    "equity": INITIAL_EQUITY,
+    "starting_equity": INITIAL_EQUITY,
     "multiplier": 10.0,
-    "runtime_hours": 0.2,
+    "runtime_str": "00:01 / 24H",
     "active_position": {
-        "symbol": "XLM",
-        "type": "SHORT",
+        "symbol": "SOL",
+        "type": "LONG",
         "leverage": 10,
-        "entry": 0.39466,
-        "current": 0.1899,
-        "tp_price": 0.17830,
-        "tp_hit": True,
-        "unrealized_pnl": 4.50,
-        "pnl_pct": 7.0,
+        "entry": 182.50,
+        "current": 194.20,
+        "tp_price": 198.00,
+        "tp_hit": False,
+        "unrealized_pnl": 12.40,
+        "pnl_pct": 14.2,
         "margin": 25.0,
-        "sparkline": [0.39, 0.35, 0.32, 0.28, 0.24, 0.19]
+        "sparkline": [182, 185, 188, 191, 194]
     },
     "trade_tape_logs": [
-        "SHORT XLM opened at $0.39466",
-        "Price movement tracked: -12.4%",
-        "Take Profit target locked at $0.17830"
+        "Connected to Perpetual Execution Core",
+        "Scouting high-conviction order books...",
+        "LONG SOL 10x position initialized."
     ],
     "big_closes": [
         {"symbol": "XLM", "side": "SHORT", "lev": "10x", "profit": 30},
@@ -38,61 +47,74 @@ portfolio = {
     ]
 }
 
-def local_simulation_worker():
-    print("=== Grok Bot Local Simulation Loop Active ($100 Capital) ===")
-    mock_market = [
+def trading_engine_worker():
+    """Handles either Paper Trading simulation or Live Exchange execution loop."""
+    print(f"=== Grok Bot Core Started | Mode: {'LIVE TRADING' if LIVE_MODE else 'PAPER TRADING ($100)'} ===")
+    
+    symbols = [
+        ("SOL", "LONG", 12, 180, 195, 45),
         ("XLM", "SHORT", 10, 0.39, 0.18, 25),
-        ("ETH", "LONG", 16, 2400, 2460, 45),
+        ("ETH", "LONG", 16, 2400, 2480, 60),
         ("BCH", "LONG", 16, 237, 272, 85),
         ("AVAX", "LONG", 11, 9.04, 9.74, 120),
-        ("SOL", "LONG", 20, 180, 195, 150),
-        ("BNB", "SHORT", 23, 700, 722, 210)
+        ("BNB", "SHORT", 23, 700, 722, 150)
     ]
     idx = 0
-    
+
     while True:
         try:
-            time.sleep(5)
-            sym, side, lev, entry, target, profit_val = mock_market[idx % len(mock_market)]
-            idx += 1
-            
-            # Simulate dynamic price ticks and PnL scaling
-            pnl_pct = random.randint(12, 92)
-            unrealized = round(profit_val * (pnl_pct / 100), 2)
-            
-            portfolio["active_position"] = {
-                "symbol": sym,
-                "type": side,
-                "leverage": lev,
-                "entry": entry,
-                "current": target,
-                "tp_price": target,
-                "tp_hit": True,
-                "unrealized_pnl": unrealized,
-                "pnl_pct": pnl_pct,
-                "margin": 20,
-                "sparkline": [entry, entry * 0.96, entry * 0.92, target]
-            }
-            
-            # Every few cycles, close the trade into equity & big closes
-            if idx % 2 == 0:
-                portfolio["equity"] = round(portfolio["equity"] + unrealized, 2)
-                portfolio["big_closes"].insert(0, {
+            if LIVE_MODE:
+                # --- LIVE EXECUTION HOOK ---
+                # When you go live, replace this block with CCXT / Exchange API calls:
+                # e.g., exchange.create_market_order(...) and fetch live account balance.
+                pass
+            else:
+                # --- PAPER TRADING SIMULATION LOOP ---
+                time.sleep(4)
+                sym, side, lev, entry, target, base_profit = symbols[idx % len(symbols)]
+                idx += 1
+
+                # Simulate active market fluctuations
+                pnl_pct = random.randint(5, 45)
+                unrealized = round((portfolio["equity"] * 0.25) * (pnl_pct / 100) * (lev / 10), 2)
+
+                portfolio["active_position"] = {
                     "symbol": sym,
-                    "side": side,
-                    "lev": f"{lev}x",
-                    "profit": int(unrealized + 10)
-                })
-                if len(portfolio["big_closes"]) > 5:
-                    portfolio["big_closes"].pop()
-                portfolio["trade_tape_logs"].insert(0, f"TP HIT: {sym} {side} {lev}x (+${unrealized})")
+                    "type": side,
+                    "leverage": lev,
+                    "entry": entry,
+                    "current": target if pnl_pct > 30 else entry * 1.05,
+                    "tp_price": target,
+                    "tp_hit": pnl_pct > 35,
+                    "unrealized_pnl": unrealized,
+                    "pnl_pct": pnl_pct,
+                    "margin": round(portfolio["equity"] * 0.25, 2),
+                    "sparkline": [entry, entry * 1.02, entry * 1.04, target]
+                }
 
-            portfolio["runtime_hours"] = round(portfolio["runtime_hours"] + 0.01, 2)
+                # Periodically take profit and close trade into equity
+                if pnl_pct > 35:
+                    profit_realized = base_profit // 3
+                    portfolio["equity"] = round(portfolio["equity"] + profit_realized, 2)
+                    
+                    portfolio["big_closes"].insert(0, {
+                        "symbol": sym,
+                        "side": side,
+                        "lev": f"{lev}x",
+                        "profit": int(profit_realized)
+                    })
+                    if len(portfolio["big_closes"]) > 5:
+                        portfolio["big_closes"].pop()
+
+                    portfolio["trade_tape_logs"].insert(0, f"TP HIT: {sym} {side} {lev}x (+${profit_realized})")
+                    if len(portfolio["trade_tape_logs"]) > 20:
+                        portfolio["trade_tape_logs"].pop()
+
         except Exception as e:
-            print(f"Loop error: {e}")
+            print(f"Engine Error: {e}")
 
-# Run simulation loop in background thread
-threading.Thread(target=local_simulation_worker, daemon=True).start()
+# Start background trading loop thread
+threading.Thread(target=trading_engine_worker, daemon=True).start()
 
 @app.route('/')
 def index():
@@ -100,7 +122,10 @@ def index():
 
 @app.route('/api/state')
 def get_state():
-    return jsonify(portfolio)
+    return jsonify({
+        **portfolio,
+        "live_mode": LIVE_MODE
+    })
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
