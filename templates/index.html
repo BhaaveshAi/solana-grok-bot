@@ -18,54 +18,61 @@
             align-items: center;
             margin-bottom: 12px;
         }
-        .logo { font-weight: bold; font-size: 1.2rem; display: flex; align-items: center; gap: 6px; }
-        .status-badge { background: #1a2318; color: #00e676; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; }
-        .equity-box { margin-bottom: 16px; }
-        .equity-label { color: #8b949e; font-size: 0.8rem; text-transform: uppercase; }
-        .equity-val { font-size: 2rem; font-weight: bold; }
-        .equity-profit { color: #00e676; font-size: 0.9rem; }
-        .card { background-color: #151a21; border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 1px s #21262d; }
-        .pos-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .pnl-green { color: #00e676; font-size: 1.5rem; font-weight: bold; }
+        .logo { font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; gap: 6px; }
+        .badge-paper { background: #1a271b; color: #00e676; padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: bold; border: 1px solid #1e3a24; }
+        .equity-section { margin-bottom: 16px; }
+        .equity-title { color: #8b949e; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        .equity-value { font-size: 2.2rem; font-weight: bold; margin: 2px 0; }
+        .equity-gain { color: #00e676; font-size: 0.85rem; font-weight: 600; }
+        .card { background-color: #151a21; border-radius: 12px; padding: 16px; margin-bottom: 14px; border: 1px solid #21262d; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .pnl-amount { color: #00e676; font-size: 1.4rem; font-weight: bold; }
         .closes-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
-        .close-slot { background: #1f2630; border-radius: 8px; padding: 10px; text-align: center; font-size: 0.8rem; color: #8b949e; }
+        .close-slot { background: #121e17; border: 1px solid #1e3a24; border-radius: 8px; padding: 10px; text-align: center; font-size: 0.75rem; color: #00e676; }
+        .close-slot .sym { font-weight: bold; font-size: 0.85rem; color: #fff; }
+        .tape-box { font-family: monospace; font-size: 0.75rem; color: #8b949e; max-height: 80px; overflow: hidden; }
     </style>
 </head>
 <body>
 
     <div class="header">
         <div class="logo">🐼 Grok Bot</div>
-        <div class="status-badge">PAPER RUN</div>
+        <div class="badge-paper">PAPER RUN</div>
     </div>
 
-    <div class="equity-box">
-        <div class="equity-label">Equity</div>
-        <div class="equity-val" id="equity-val">$59.89</div>
-        <div class="equity-profit" id="equity-gain">+$0.00</div>
-    </div>
-
-    <div class="card" id="position-card">
-        <div class="pos-header">
-            <div>
-                <span id="pos-symbol" style="font-weight:bold; font-size:1.1rem;">---</span>
-                <span id="pos-side" style="font-size:0.8rem; padding:2px 6px; border-radius:4px; background:#22252a;">---</span>
-            </div>
-            <div id="pos-pnl" class="pnl-green">+$0.00</div>
-        </div>
-        <div style="font-size: 0.85rem; color: #8b949e;" id="pos-details">Waiting for execution setup...</div>
+    <div class="equity-section">
+        <div class="equity-title">Equity</div>
+        <div class="equity-value" id="equity-val">$59.89</div>
+        <div class="equity-gain" id="equity-gain">+$0.00</div>
     </div>
 
     <div class="card">
-        <div style="font-size: 0.85rem; color: #8b949e; margin-bottom: 8px;">Big Closes</div>
+        <div class="card-header">
+            <div>
+                <span id="pos-symbol" style="font-weight:bold; font-size:1.1rem;">---</span>
+                <span id="pos-side" style="font-size:0.75rem; padding:2px 6px; border-radius:4px; background:#1f2630; color:#8b949e;">---</span>
+            </div>
+            <div id="pos-pnl" class="pnl-amount">+$0.00</div>
+        </div>
+        <div style="font-size: 0.8rem; color: #8b949e;" id="pos-details">Initializing perp market feeds...</div>
+    </div>
+
+    <div class="card">
+        <div style="font-size: 0.75rem; color: #8b949e; text-transform: uppercase; margin-bottom: 8px;">Big Closes</div>
         <div class="closes-grid" id="closes-grid">
-            <div class="close-slot">?</div>
-            <div class="close-slot">?</div>
-            <div class="close-slot">?</div>
+            <div class="close-slot" style="background:#151a21; border-color:#21262d; color:#484f58;">?</div>
+            <div class="close-slot" style="background:#151a21; border-color:#21262d; color:#484f58;">?</div>
+            <div class="close-slot" style="background:#151a21; border-color:#21262d; color:#484f58;">?</div>
         </div>
     </div>
 
+    <div class="card">
+        <div style="font-size: 0.75rem; color: #8b949e; text-transform: uppercase; margin-bottom: 6px;">Trade Tape</div>
+        <div class="tape-box" id="trade-tape">Connecting to order stream...</div>
+    </div>
+
     <script>
-        async function updateDashboard() {
+        async function refreshDashboard() {
             try {
                 const res = await fetch('/api/state');
                 const data = await res.json();
@@ -81,26 +88,30 @@
                     document.getElementById('pos-pnl').innerText = `+$${pos.unrealized_pnl.toFixed(2)}`;
                     document.getElementById('pos-details').innerText = `Entry: $${pos.entry_price} | Return: +${(pos.pnl_pct*100).toFixed(1)}%`;
                 } else {
-                    document.getElementById('pos-symbol').innerText = "SCANNING...";
+                    document.getElementById('pos-symbol').innerText = "SCANNING";
                     document.getElementById('pos-side').innerText = "IDLE";
                     document.getElementById('pos-pnl').innerText = "$0.00";
-                    document.getElementById('pos-details').innerText = "Analyzing perp order books...";
+                    document.getElementById('pos-details').innerText = "Searching high-conviction perp setups...";
                 }
 
                 const grid = document.getElementById('closes-grid');
                 if (data.big_closes.length > 0) {
                     grid.innerHTML = data.big_closes.slice(0, 3).map(c => `
-                        <div class="close-slot" style="background:#13221a; color:#00e676;">
-                            <b>${c.symbol}</b><br>+$${c.profit.toFixed(0)}
+                        <div class="close-slot">
+                            <span class="sym">${c.symbol}</span><br>+$${c.profit.toFixed(0)}
                         </div>
                     `).join('');
                 }
+
+                const tape = document.getElementById('trade-tape');
+                tape.innerHTML = data.trade_tape.slice(0, 3).join('<br>');
+
             } catch (err) {
                 console.error(err);
             }
         }
-        setInterval(updateDashboard, 3000);
-        updateDashboard();
+        setInterval(refreshDashboard, 3000);
+        refreshDashboard();
     </script>
 </body>
 </html>
