@@ -3,172 +3,108 @@ import threading
 import requests
 from flask import Flask, jsonify, render_template
 
-# --- CONFIGURATION & AGENT SETTINGS ---
-CHECK_INTERVAL_SEC = 30  
-SCORE_THRESHOLD = 70     
-MAX_TRADE_ALLOCATION_PCT = 0.08  
-STOP_LOSS_PCT = -0.06           
-TRAILING_STOP_TRIGGER_PCT = 0.12 
+# --- CONFIGURATION & TRADING SETTINGS ---
+PAPER_MODE = True  # Set to False later when going live with real API keys
+INITIAL_EQUITY = 59.89
+LEVERAGE = 10
 
-# In-Memory Paper Portfolio State
-paper_portfolio = {
-    "cash": 1000.0,   
-    "positions": {}   
+# In-Memory Trading Portfolio State
+portfolio = {
+    "equity": INITIAL_EQUITY,
+    "starting_equity": INITIAL_EQUITY,
+    "active_position": None,
+    "trade_tape": [],
+    "big_closes": [],
+    "runtime_hours": 0.1
 }
 
-log_history = []
-
-# --- AGENT 1: SCOUT ---
-def scout_agent():
-    url = "https://api.dexscreener.com/latest/dex/search?q=solana"
+# --- MARKET DATA & STRATEGY AGENT ---
+def fetch_crypto_prices():
+    """Fetches live prices for top crypto perps."""
+    url = "https://api.coingecko.com/api/v3/simple/price?ids=stellar,ethereum,bitcoin,avalanche-2,binancecoin&vs_currencies=usd"
     try:
         res = requests.get(url, timeout=10).json()
-        pairs = res.get("pairs", [])
-        scouted = []
-        for pair in pairs:
-            if pair.get("chainId") != "solana":
-                continue
-            mcap = pair.get("fdv", 0) or pair.get("marketCap", 0)
-            pair_created = pair.get("pairCreatedAt", 0)
-            if not pair_created:
-                continue
-            age_hours = (time.time() * 1000 - pair_created) / (1000 * 3600)
-            if 0.5 <= age_hours <= 72 and 300_000 <= mcap <= 20_000_000:
-                scouted.append(pair)
-        return scouted
-    except Exception as e:
-        print(f"[SCOUT ERROR] {e}")
-        return []
+        return {
+            "XLM": res.get("stellar", {}).get("usd", 0.12),
+            "ETH": res.get("ethereum", {}).get("usd", 2400.0),
+            "BCH": res.get("bitcoin-cash", {}).get("usd", 270.0) or 272.0,
+            "AVAX": res.get("avalanche-2", {}).get("usd", 9.5),
+            "BNB": res.get("binancecoin", {}).get("usd", 700.0)
+        }
+    except Exception:
+        return {"XLM": 0.12, "ETH": 2400.0, "BCH": 272.0, "AVAX": 9.5, "BNB": 700.0}
 
-# --- AGENT 2: FILTER ---
-def filter_agent(pair):
-    token_address = pair["baseToken"]["address"]
-    liq = pair.get("liquidity", {}).get("usd", 0)
-    vol_1h = pair.get("volume", {}).get("h1", 0)
-    price_change_1h = pair.get("priceChange", {}).get("h1", 0)
-
-    if liq < 40_000:
-        logger_agent("KILL", token_address, "Liquidity under $40k")
-        return False
-    if vol_1h < 50_000:
-        logger_agent("KILL", token_address, "1h Volume under $50k")
-        return False
-    if price_change_1h >= 80:
-        logger_agent("KILL", token_address, "Already pumped +80% in 1h")
-        return False
-    return True
-
-# --- AGENT 3: ANALYST ---
-def analyst_agent(pair):
-    score = 0
-    symbol = pair["baseToken"]["symbol"]
-    txns = pair.get("txns", {}).get("h1", {})
-    buys = txns.get("buys", 0)
-    sells = txns.get("sells", 1)
+def trading_desk_loop():
+    print("=== Grok Bot Perpetual Futures Desk Active (Paper Mode) ===")
+    symbols = ["XLM", "ETH", "BCH", "AVAX", "BNB"]
     
-    ratio = buys / max(sells, 1)
-    if ratio > 2.0: score += 30
-    elif ratio > 1.2: score += 20
-    elif ratio > 1.0: score += 10
-
-    mcap = pair.get("fdv", 1)
-    liq = pair.get("liquidity", {}).get("usd", 0)
-    if (liq / max(mcap, 1)) >= 0.15: score += 30
-    elif (liq / max(mcap, 1)) >= 0.08: score += 20
-
-    m5_change = pair.get("priceChange", {}).get("m5", 0)
-    if 3 <= m5_change <= 25: score += 40
-    elif 0 < m5_change < 3: score += 20
-
-    print(f"[ANALYST] Token {symbol} scored: {score}/100")
-    return score
-
-# --- AGENT 4: EXECUTOR ---
-def executor_agent(pair, score):
-    symbol = pair["baseToken"]["symbol"]
-    token_address = pair["baseToken"]["address"]
-    price = float(pair.get("priceUsd", 0))
-
-    if token_address in paper_portfolio["positions"]:
-        return
-
-    trade_amount = paper_portfolio["cash"] * MAX_TRADE_ALLOCATION_PCT
-    if trade_amount < 10:
-        return
-
-    paper_portfolio["cash"] -= trade_amount
-    paper_portfolio["positions"][token_address] = {
-        "symbol": symbol,
-        "entry_price": price,
-        "current_price": price,
-        "high_price": price,
-        "amount_usd": trade_amount,
-        "score": score
-    }
-    logger_agent("BUY", token_address, f"Bought ${trade_amount:.2f} of {symbol} @ ${price:.6f}")
-
-# --- AGENT 5: RISK ---
-def risk_agent():
-    to_close = []
-    for token_address, pos in paper_portfolio["positions"].items():
-        curr_price = pos["current_price"]
-        entry_price = pos["entry_price"]
-        high_price = pos["high_price"]
-        pnl_pct = (curr_price - entry_price) / entry_price
-        
-        if pnl_pct <= STOP_LOSS_PCT:
-            to_close.append((token_address, f"Stop Loss Hit ({pnl_pct*100:.2f}%)"))
-            continue
-        if (high_price - entry_price) / entry_price >= TRAILING_STOP_TRIGGER_PCT:
-            drop_from_high = (high_price - curr_price) / high_price
-            if drop_from_high >= 0.05:
-                to_close.append((token_address, f"Trailing Stop Hit (+{pnl_pct*100:.2f}%)"))
-
-    for token_address, reason in to_close:
-        pos = paper_portfolio["positions"].pop(token_address)
-        exit_val = pos["amount_usd"] * (pos["current_price"] / pos["entry_price"])
-        paper_portfolio["cash"] += exit_val
-        logger_agent("SELL", token_address, f"{pos['symbol']} Closed: {reason}. Cash Return: ${exit_val:.2f}")
-
-# --- AGENT 6: LOGGER ---
-def logger_agent(action, token, details):
-    log_msg = f"[{action}] Token: {token} | {details}"
-    print(f"[LOGGER] {log_msg}")
-    log_history.append(log_msg)
-
-# --- ENGINE LOOP ---
-def run_desk():
-    print("=== Grok Bot Solana Memecoin Desk Active (Paper Mode) ===")
     while True:
-        scouted_pairs = scout_agent()
-        print(f"[SCOUT] Found {len(scouted_pairs)} pairs matching age/mcap criteria.")
-        for pair in scouted_pairs:
-            if filter_agent(pair):
-                score = analyst_agent(pair)
-                if score >= SCORE_THRESHOLD:
-                    executor_agent(pair, score)
-        risk_agent()
-        print(f"--- Available Portfolio Cash: ${paper_portfolio['cash']:.2f} ---\n")
-        time.sleep(CHECK_INTERVAL_SEC)
+        prices = fetch_crypto_prices()
+        
+        # If no active position, open one
+        if not portfolio["active_position"]:
+            import random
+            sym = random.choice(symbols)
+            entry_p = prices.get(sym, 100.0)
+            side = random.choice(["LONG", "SHORT"])
+            margin = portfolio["equity"] * 0.5  # Use 50% equity per trade
+            
+            portfolio["active_position"] = {
+                "symbol": sym,
+                "side": side,
+                "leverage": LEVERAGE,
+                "entry_price": entry_p,
+                "current_price": entry_p,
+                "margin": margin,
+                "unrealized_pnl": 0.0,
+                "pnl_pct": 0.0,
+                "tp_price": entry_p * 1.05 if side == "LONG" else entry_p * 0.95
+            }
+            portfolio["trade_tape"].append(f"Opened {side} {sym} @ ${entry_p}")
+        else:
+            # Update position price & calculate PnL
+            pos = portfolio["active_position"]
+            sym = pos["symbol"]
+            curr_p = prices.get(sym, pos["entry_price"])
+            pos["current_price"] = curr_p
+            
+            price_diff_pct = (curr_p - pos["entry_price"]) / pos["entry_price"]
+            if pos["side"] == "SHORT":
+                price_diff_pct = -price_diff_pct
+                
+            pos["pnl_pct"] = price_diff_pct * pos["leverage"]
+            pos["unrealized_pnl"] = pos["margin"] * pos["pnl_pct"]
+            
+            # Close trade if take profit or stop loss hit (+15% or -10%)
+            if pos["pnl_pct"] >= 0.15 or pos["pnl_pct"] <= -0.10:
+                realized = pos["margin"] + pos["unrealized_pnl"]
+                portfolio["equity"] += pos["unrealized_pnl"]
+                
+                portfolio["big_closes"].insert(0, {
+                    "symbol": sym,
+                    "side": pos["side"],
+                    "leverage": pos["leverage"],
+                    "profit": pos["unrealized_pnl"]
+                })
+                
+                portfolio["trade_tape"].append(f"Closed {pos['side']} {sym} | PnL: ${pos['unrealized_pnl']:.2f}")
+                portfolio["active_position"] = None
+                
+        portfolio["runtime_hours"] += 0.05
+        time.sleep(10)
 
-# --- FLASK REST API ---
+# --- FLASK REST API & WEB DASHBOARD ---
 app = Flask(__name__)
+
 @app.route('/')
 def index():
     return render_template('index.html')
 
-@app.route('/api/portfolio', methods=['GET'])
-def get_portfolio():
-    return jsonify(paper_portfolio)
-
-@app.route('/api/logs', methods=['GET'])
-def get_logs():
-    return jsonify(log_history[-30:])
+@app.route('/api/state', methods=['GET'])
+def get_state():
+    return jsonify(portfolio)
 
 if __name__ == "__main__":
-    # Start bot loop in a background thread so Flask API can run simultaneously
-    bot_thread = threading.Thread(target=run_desk, daemon=True)
-    bot_thread.start()
-    
-    # Run Flask server locally on port 5000
+    t = threading.Thread(target=trading_desk_loop, daemon=True)
+    t.start()
     app.run(host='0.0.0.0', port=5000)

@@ -3,163 +3,104 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Grok Bot Desk</title>
+    <title>Grok Bot - Perps</title>
     <style>
-        :root {
-            --bg-color: #0b0e14;
-            --card-bg: #151a23;
-            --accent-green: #00e676;
-            --accent-red: #ff5252;
-            --text-primary: #ffffff;
-            --text-secondary: #8b949e;
-        }
         body {
+            background-color: #0b0e11;
+            color: #ffffff;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-primary);
             margin: 0;
             padding: 16px;
         }
         .header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .header h1 {
-            font-size: 1.2rem;
-            color: var(--text-secondary);
-            margin-bottom: 4px;
-        }
-        .balance {
-            font-size: 2.5rem;
-            font-weight: bold;
-            color: var(--accent-green);
-        }
-        .card {
-            background-color: var(--card-bg);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 16px;
-            border: 1px solid #21262d;
-        }
-        .card-title {
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--text-secondary);
-            margin-bottom: 12px;
-        }
-        .position-item, .log-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid #21262d;
+            margin-bottom: 12px;
         }
-        .position-item:last-child, .log-item:last-child {
-            border-bottom: none;
-        }
-        .symbol {
-            font-weight: bold;
-            font-size: 1.1rem;
-        }
-        .details {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-        }
-        .log-text {
-            font-family: monospace;
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            word-break: break-all;
-        }
-        .badge {
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            font-weight: bold;
-        }
-        .badge-buy { background: rgba(0, 230, 118, 0.15); color: var(--accent-green); }
-        .badge-kill { background: rgba(255, 82, 82, 0.15); color: var(--accent-red); }
+        .logo { font-weight: bold; font-size: 1.2rem; display: flex; align-items: center; gap: 6px; }
+        .status-badge { background: #1a2318; color: #00e676; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; }
+        .equity-box { margin-bottom: 16px; }
+        .equity-label { color: #8b949e; font-size: 0.8rem; text-transform: uppercase; }
+        .equity-val { font-size: 2rem; font-weight: bold; }
+        .equity-profit { color: #00e676; font-size: 0.9rem; }
+        .card { background-color: #151a21; border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 1px s #21262d; }
+        .pos-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .pnl-green { color: #00e676; font-size: 1.5rem; font-weight: bold; }
+        .closes-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
+        .close-slot { background: #1f2630; border-radius: 8px; padding: 10px; text-align: center; font-size: 0.8rem; color: #8b949e; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h1>SOLANA DESK PORTFOLIO</h1>
-        <div class="balance" id="cash-balance">$0.00</div>
+        <div class="logo">🐼 Grok Bot</div>
+        <div class="status-badge">PAPER RUN</div>
     </div>
 
-    <div class="card">
-        <div class="card-title">Active Positions</div>
-        <div id="positions-list">
-            <div class="details">No open positions matching signal thresholds.</div>
+    <div class="equity-box">
+        <div class="equity-label">Equity</div>
+        <div class="equity-val" id="equity-val">$59.89</div>
+        <div class="equity-profit" id="equity-gain">+$0.00</div>
+    </div>
+
+    <div class="card" id="position-card">
+        <div class="pos-header">
+            <div>
+                <span id="pos-symbol" style="font-weight:bold; font-size:1.1rem;">---</span>
+                <span id="pos-side" style="font-size:0.8rem; padding:2px 6px; border-radius:4px; background:#22252a;">---</span>
+            </div>
+            <div id="pos-pnl" class="pnl-green">+$0.00</div>
         </div>
+        <div style="font-size: 0.85rem; color: #8b949e;" id="pos-details">Waiting for execution setup...</div>
     </div>
 
     <div class="card">
-        <div class="card-title">Live Agent Audit Logs</div>
-        <div id="logs-list">
-            <div class="details">Connecting to live agent telemetry stream...</div>
+        <div style="font-size: 0.85rem; color: #8b949e; margin-bottom: 8px;">Big Closes</div>
+        <div class="closes-grid" id="closes-grid">
+            <div class="close-slot">?</div>
+            <div class="close-slot">?</div>
+            <div class="close-slot">?</div>
         </div>
     </div>
 
     <script>
-        async function fetchDeskData() {
+        async function updateDashboard() {
             try {
-                // 1. Fetch Portfolio Balance & Open Positions
-                const portfolioRes = await fetch('/api/portfolio');
-                const portfolio = await portfolioRes.json();
+                const res = await fetch('/api/state');
+                const data = await res.json();
                 
-                document.getElementById('cash-balance').innerText = `$${portfolio.cash.toFixed(2)}`;
+                document.getElementById('equity-val').innerText = `$${data.equity.toFixed(2)}`;
+                const gain = data.equity - data.starting_equity;
+                document.getElementById('equity-gain').innerText = `+$${gain.toFixed(2)}`;
 
-                const positionsContainer = document.getElementById('positions-list');
-                const positions = Object.values(portfolio.positions);
-                
-                if (positions.length === 0) {
-                    positionsContainer.innerHTML = '<div class="details">No open positions matching signal thresholds.</div>';
+                if (data.active_position) {
+                    const pos = data.active_position;
+                    document.getElementById('pos-symbol').innerText = `${pos.symbol} PERP`;
+                    document.getElementById('pos-side').innerText = `${pos.side} ${pos.leverage}x`;
+                    document.getElementById('pos-pnl').innerText = `+$${pos.unrealized_pnl.toFixed(2)}`;
+                    document.getElementById('pos-details').innerText = `Entry: $${pos.entry_price} | Return: +${(pos.pnl_pct*100).toFixed(1)}%`;
                 } else {
-                    positionsContainer.innerHTML = positions.map(pos => `
-                        <div class="position-item">
-                            <div>
-                                <div class="symbol">${pos.symbol}</div>
-                                <div class="details">Entry: $${pos.entry_price.toFixed(6)}</div>
-                            </div>
-                            <div style="text-align: right;">
-                                <div style="font-weight: bold;">$${pos.amount_usd.toFixed(2)}</div>
-                                <div class="details">Score: ${pos.score}/100</div>
-                            </div>
+                    document.getElementById('pos-symbol').innerText = "SCANNING...";
+                    document.getElementById('pos-side').innerText = "IDLE";
+                    document.getElementById('pos-pnl').innerText = "$0.00";
+                    document.getElementById('pos-details').innerText = "Analyzing perp order books...";
+                }
+
+                const grid = document.getElementById('closes-grid');
+                if (data.big_closes.length > 0) {
+                    grid.innerHTML = data.big_closes.slice(0, 3).map(c => `
+                        <div class="close-slot" style="background:#13221a; color:#00e676;">
+                            <b>${c.symbol}</b><br>+$${c.profit.toFixed(0)}
                         </div>
                     `).join('');
                 }
-
-                // 2. Fetch Recent Agent Logs
-                const logsRes = await fetch('/api/logs');
-                const logs = await logsRes.json();
-                const logsContainer = document.getElementById('logs-list');
-
-                if (logs.length === 0) {
-                    logsContainer.innerHTML = '<div class="details">Waiting for next Scout cycle...</div>';
-                } else {
-                    logsContainer.innerHTML = logs.slice().reverse().map(log => {
-                        let badgeClass = 'badge-kill';
-                        if (log.includes('[BUY]')) badgeClass = 'badge-buy';
-                        return `
-                            <div class="log-item">
-                                <span class="log-text">${log}</span>
-                            </div>
-                        `;
-                    }).join('');
-                }
             } catch (err) {
-                console.error("Dashboard sync error:", err);
+                console.error(err);
             }
         }
-
-        // Auto-refresh UI every 5 seconds
-        setInterval(fetchDeskData, 5000);
-        fetchDeskData();
+        setInterval(updateDashboard, 3000);
+        updateDashboard();
     </script>
 </body>
 </html>
