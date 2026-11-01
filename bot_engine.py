@@ -1,17 +1,16 @@
 import time
 import threading
 import random
-import requests
 from flask import Flask, jsonify, render_template
 
-# --- CONFIGURATION & STATE ---
 app = Flask(__name__)
 
+# --- PAPER TRADING DESK STATE ($100.00 START) ---
 portfolio = {
     "equity": 100.00,
     "starting_equity": 100.00,
-    "multiplier": 1.0,
-    "runtime_str": "00:01 / 24H",
+    "multiplier": 10.0,
+    "runtime_hours": 0.2,
     "active_position": {
         "symbol": "XLM",
         "type": "SHORT",
@@ -25,7 +24,6 @@ portfolio = {
         "margin": 25.0,
         "sparkline": [0.39, 0.35, 0.32, 0.28, 0.24, 0.19]
     },
-    "trade_tape_stats": {"v": 3, "l": 6, "score": 85},
     "trade_tape_logs": [
         "SHORT XLM opened at $0.39466",
         "Price movement tracked: -12.4%",
@@ -40,20 +38,27 @@ portfolio = {
     ]
 }
 
-def simulation_worker():
-    symbols = [
+def local_simulation_worker():
+    print("=== Grok Bot Local Simulation Loop Active ($100 Capital) ===")
+    mock_market = [
         ("XLM", "SHORT", 10, 0.39, 0.18, 25),
         ("ETH", "LONG", 16, 2400, 2460, 45),
         ("BCH", "LONG", 16, 237, 272, 85),
         ("AVAX", "LONG", 11, 9.04, 9.74, 120),
+        ("SOL", "LONG", 20, 180, 195, 150),
         ("BNB", "SHORT", 23, 700, 722, 210)
     ]
     idx = 0
+    
     while True:
         try:
-            time.sleep(6)
-            sym, side, lev, entry, target, profit = symbols[idx % len(symbols)]
+            time.sleep(5)
+            sym, side, lev, entry, target, profit_val = mock_market[idx % len(mock_market)]
             idx += 1
+            
+            # Simulate dynamic price ticks and PnL scaling
+            pnl_pct = random.randint(12, 92)
+            unrealized = round(profit_val * (pnl_pct / 100), 2)
             
             portfolio["active_position"] = {
                 "symbol": sym,
@@ -63,18 +68,31 @@ def simulation_worker():
                 "current": target,
                 "tp_price": target,
                 "tp_hit": True,
-                "unrealized_pnl": float(profit) / 3,
-                "pnl_pct": random.randint(15, 85),
+                "unrealized_pnl": unrealized,
+                "pnl_pct": pnl_pct,
                 "margin": 20,
-                "sparkline": [entry, entry*0.95, entry*0.90, target]
+                "sparkline": [entry, entry * 0.96, entry * 0.92, target]
             }
-            portfolio["equity"] += 15.0
-            portfolio["trade_tape_logs"].insert(0, f"TP HIT: {sym} {side} {lev}x (+${profit})")
-        except Exception as e:
-            print(f"[SIMULATION ERROR] {e}")
+            
+            # Every few cycles, close the trade into equity & big closes
+            if idx % 2 == 0:
+                portfolio["equity"] = round(portfolio["equity"] + unrealized, 2)
+                portfolio["big_closes"].insert(0, {
+                    "symbol": sym,
+                    "side": side,
+                    "lev": f"{lev}x",
+                    "profit": int(unrealized + 10)
+                })
+                if len(portfolio["big_closes"]) > 5:
+                    portfolio["big_closes"].pop()
+                portfolio["trade_tape_logs"].insert(0, f"TP HIT: {sym} {side} {lev}x (+${unrealized})")
 
-# Start background simulation thread safely
-threading.Thread(target=simulation_worker, daemon=True).start()
+            portfolio["runtime_hours"] = round(portfolio["runtime_hours"] + 0.01, 2)
+        except Exception as e:
+            print(f"Loop error: {e}")
+
+# Run simulation loop in background thread
+threading.Thread(target=local_simulation_worker, daemon=True).start()
 
 @app.route('/')
 def index():
