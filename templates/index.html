@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Grok Bot Desk</title>
+    <style>
+        :root {
+            --bg-color: #0b0e14;
+            --card-bg: #151a23;
+            --accent-green: #00e676;
+            --accent-red: #ff5252;
+            --text-primary: #ffffff;
+            --text-secondary: #8b949e;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 16px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+        .balance {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--accent-green);
+        }
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            border: 1px solid #21262d;
+        }
+        .card-title {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+        .position-item, .log-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #21262d;
+        }
+        .position-item:last-child, .log-item:last-child {
+            border-bottom: none;
+        }
+        .symbol {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        .details {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        .log-text {
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            word-break: break-all;
+        }
+        .badge {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+        .badge-buy { background: rgba(0, 230, 118, 0.15); color: var(--accent-green); }
+        .badge-kill { background: rgba(255, 82, 82, 0.15); color: var(--accent-red); }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>SOLANA DESK PORTFOLIO</h1>
+        <div class="balance" id="cash-balance">$0.00</div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">Active Positions</div>
+        <div id="positions-list">
+            <div class="details">No open positions matching signal thresholds.</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">Live Agent Audit Logs</div>
+        <div id="logs-list">
+            <div class="details">Connecting to live agent telemetry stream...</div>
+        </div>
+    </div>
+
+    <script>
+        async function fetchDeskData() {
+            try {
+                // 1. Fetch Portfolio Balance & Open Positions
+                const portfolioRes = await fetch('/api/portfolio');
+                const portfolio = await portfolioRes.json();
+                
+                document.getElementById('cash-balance').innerText = `$${portfolio.cash.toFixed(2)}`;
+
+                const positionsContainer = document.getElementById('positions-list');
+                const positions = Object.values(portfolio.positions);
+                
+                if (positions.length === 0) {
+                    positionsContainer.innerHTML = '<div class="details">No open positions matching signal thresholds.</div>';
+                } else {
+                    positionsContainer.innerHTML = positions.map(pos => `
+                        <div class="position-item">
+                            <div>
+                                <div class="symbol">${pos.symbol}</div>
+                                <div class="details">Entry: $${pos.entry_price.toFixed(6)}</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-weight: bold;">$${pos.amount_usd.toFixed(2)}</div>
+                                <div class="details">Score: ${pos.score}/100</div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+
+                // 2. Fetch Recent Agent Logs
+                const logsRes = await fetch('/api/logs');
+                const logs = await logsRes.json();
+                const logsContainer = document.getElementById('logs-list');
+
+                if (logs.length === 0) {
+                    logsContainer.innerHTML = '<div class="details">Waiting for next Scout cycle...</div>';
+                } else {
+                    logsContainer.innerHTML = logs.slice().reverse().map(log => {
+                        let badgeClass = 'badge-kill';
+                        if (log.includes('[BUY]')) badgeClass = 'badge-buy';
+                        return `
+                            <div class="log-item">
+                                <span class="log-text">${log}</span>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            } catch (err) {
+                console.error("Dashboard sync error:", err);
+            }
+        }
+
+        // Auto-refresh UI every 5 seconds
+        setInterval(fetchDeskData, 5000);
+        fetchDeskData();
+    </script>
+</body>
+</html>

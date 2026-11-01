@@ -1,7 +1,7 @@
 import time
 import threading
 import requests
-from flask import Flask, jsonify
+from flask import Flask, jsonify, render_template
 
 # --- CONFIGURATION & AGENT SETTINGS ---
 CHECK_INTERVAL_SEC = 30  
@@ -153,6 +153,9 @@ def run_desk():
 
 # --- FLASK REST API ---
 app = Flask(__name__)
+@app.route('/')
+def index():
+    return render_template('index.html')
 
 @app.route('/api/portfolio', methods=['GET'])
 def get_portfolio():
