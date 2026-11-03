@@ -26,8 +26,8 @@
         table { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 12px; }
         th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #1f2630; }
         th { color: #848e9c; font-size: 11px; }
-        .chart-box { height: 200px; background: #0a0d12; border-radius: 6px; position: relative; padding: 10px; display: flex; flex-direction: column; justify-content: flex-end; }
-        svg { width: 100%; height: 130px; }
+        .chart-box { height: 210px; background: #0a0d12; border-radius: 6px; position: relative; padding: 10px; display: flex; flex-direction: column; justify-content: flex-end; }
+        svg { width: 100%; height: 140px; }
         .telemetry-box { font-family: monospace; font-size: 11px; background: #07090c; padding: 8px; border-radius: 4px; height: 140px; overflow-y: auto; color: #0ecb81; border: 1px solid #1f2630; }
         .vault-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 6px; }
         .vault-box { background: #161b22; border: 1px solid #21262d; border-radius: 4px; padding: 8px; text-align: center; font-size: 11px; }
@@ -47,7 +47,6 @@
 
     <div class="main-layout">
         <div class="left-pane">
-            <!-- Metrics Row -->
             <div class="metrics-grid">
                 <div class="card">
                     <div style="font-size:11px; color:#848e9c; font-weight:600;">TOTAL ACCOUNT EQUITY</div>
@@ -61,7 +60,6 @@
                 </div>
             </div>
 
-            <!-- Active Position Management -->
             <div class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                     <h3 style="font-size:12px; color:#848e9c;">ACTIVE POSITION MANAGEMENT</h3>
@@ -70,22 +68,23 @@
                 <div id="activePositionContainer">Loading position data...</div>
             </div>
 
-            <!-- Chart & Execution -->
+            <!-- Chart with TP/SL Lines -->
             <div class="card">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 6px; align-items:center;">
-                    <div style="font-weight:700; font-size:13px;" id="chartTitle">ETH/USDT PERPETUAL <span style="color:#f0b90b; font-size:11px;">16x</span></div>
+                    <div style="font-weight:700; font-size:13px;" id="chartTitle">ETH/USDT PERPETUAL <span style="color:#f0b90b; font-size:11px;" id="chartLeverage">16x</span></div>
                     <span id="livePriceHeader" class="positive" style="font-weight: 700;">$3,365.56</span>
                 </div>
                 <div class="chart-box">
+                    <div style="position: absolute; top: 12px; left: 12px; font-size: 10px; color: #0ecb81; font-weight: 600;" id="tpLabel">TP TARGET (+18%): $3,930.00</div>
+                    <div style="position: absolute; bottom: 12px; left: 12px; font-size: 10px; color: #f6465d; font-weight: 600;" id="slLabel">SL STOP (-10%): $3,003.00</div>
                     <svg id="candlestickSvg" viewBox="0 0 600 130" preserveAspectRatio="none"></svg>
                 </div>
                 <div style="display: flex; gap: 10px; margin-top: 10px;">
-                    <button class="btn-green" onclick="alert('Autonomous Agent Active: Managing positions automatically!')">AUTOMATED BUY / LONG</button>
-                    <button class="btn-red" onclick="alert('Autonomous Agent Active: Managing positions automatically!')">AUTOMATED SELL / SHORT</button>
+                    <button class="btn-green">AUTOMATED BUY / LONG</button>
+                    <button class="btn-red">AUTOMATED SELL / SHORT</button>
                 </div>
             </div>
 
-            <!-- Big Closes Profit Vault -->
             <div class="card">
                 <div style="display:flex; justify-content:space-between; font-size:12px; color:#848e9c; margin-bottom:6px;">
                     <span>BIG CLOSES PROFIT VAULT (1/5)</span>
@@ -130,10 +129,6 @@
                     <strong style="color:#0ecb81;">JUST NOW - BULLISH 92%</strong><br>
                     Solana DEX 24h volume surges past $2.8B amid high perpetual open interest.
                 </div>
-                <div style="font-size:11px; background:#161b22; padding:8px; border-radius:4px;">
-                    <strong style="color:#0ecb81;">5m AGO - BULLISH 84%</strong><br>
-                    Federal Reserve liquidity guidance triggers aggressive altcoin short squeezes.
-                </div>
             </div>
         </div>
     </div>
@@ -147,7 +142,7 @@
                 .then(data => {
                     document.getElementById('accountEquity').innerText = `$${data.equity.toFixed(2)}`;
                     document.getElementById('realizedPnlTxt').innerText = `${data.realized_pnl >= 0 ? '+' : ''}$${data.realized_pnl.toFixed(2)} REALIZED PROFIT`;
-                    document.getElementById('realizedPnlTxt').className = data.realized_pnl >= 0 ? 'positive' : 'negative';
+                    document.getElementById('realizedPnlTxtclassName = data.realized_pnl >= 0 ? 'positive' : 'negative';
 
                     let tickerHtml = '';
                     for (const [pair, price] of Object.entries(data.market_prices)) {
@@ -177,6 +172,13 @@
                             </table>
                         `;
                         document.getElementById('marginAlloc').innerText = `$${pos.margin.toFixed(2)} (25%)`;
+                        document.getElementById('chartLeverage').innerText = `${pos.leverage}x`;
+                        
+                        // Calculate & Display Dynamic TP/SL Target Values on Chart
+                        let tpPrice = pos.side === 'LONG' ? pos.entry * 1.18 : pos.entry * 0.82;
+                        let slPrice = pos.side === 'LONG' ? pos.entry * 0.90 : pos.entry * 1.10;
+                        document.getElementById('tpLabel').innerText = `TP TARGET (+18%): $${tpPrice.toFixed(2)}`;
+                        document.getElementById('slLabel').innerText = `SL STOP (-10%): $${slPrice.toFixed(2)}`;
                     } else {
                         posContainer.innerHTML = `<div style="padding: 10px; color: #848e9c; text-align: center;">Scanning order books for next setup...</div>`;
                     }
@@ -191,13 +193,11 @@
                     let obHtml = '';
                     for(let i=1; i<=4; i++) {
                         let askPrice = (currentPrice + (i * 0.4)).toFixed(2);
-                        let size = (Math.random() * 15 + 2).toFixed(1);
-                        obHtml += `<tr><td class="negative">$${askPrice}</td><td style="text-align:right;">${size}</td></tr>`;
+                        obHtml += `<tr><td class="negative">$${askPrice}</td><td style="text-align:right;">${(Math.random()*10+2).toFixed(1)}</td></tr>`;
                     }
                     for(let i=4; i>=1; i--) {
                         let bidPrice = (currentPrice - (i * 0.4)).toFixed(2);
-                        let size = (Math.random() * 15 + 2).toFixed(1);
-                        obHtml += `<tr><td class="positive">$${bidPrice}</td><td style="text-align:right;">${size}</td></tr>`;
+                        obHtml += `<tr><td class="positive">$${bidPrice}</td><td style="text-align:right;">${(Math.random()*10+2).toFixed(1)}</td></tr>`;
                     }
                     document.getElementById('orderBookBody').innerHTML = obHtml;
 
@@ -213,6 +213,9 @@
                         svgContent += `<line x1="${x}" y1="${highY}" x2="${x}" y2="${lowY}" stroke="${color}" stroke-width="1.5" />`;
                         svgContent += `<rect x="${x-5}" y="${Math.min(openY, closeY)}" width="10" height="${Math.abs(closeY - openY)}" fill="${color}" rx="1" />`;
                     }
+                    // Render Dashed TP & SL Lines across chart
+                    svgContent += `<line x1="0" y1="30" x2="600" y2="30" stroke="#0ecb81" stroke-width="1" stroke-dasharray="4" opacity="0.7"/>`;
+                    svgContent += `<line x1="0" y1="100" x2="600" y2="100" stroke="#f6465d" stroke-width="1" stroke-dasharray="4" opacity="0.7"/>`;
                     document.getElementById('candlestickSvg').innerHTML = svgContent;
                 });
         }
