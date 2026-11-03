@@ -1,4 +1,5 @@
 import os
+import json
 import time
 import random
 import threading
@@ -6,25 +7,44 @@ from flask import Flask, render_template, jsonify, request
 
 app = Flask(__name__)
 
-# Configuration & State
+# Configuration & State File
 LIVE_MODE = False  # Set to True when API keys are configured in Render
 INITIAL_EQUITY = 20.0  # Configurable starting capital (e.g., $20 test deposit)
+STATE_FILE = "platform_state.json"
 
-platform_state = {
-    "balance": INITIAL_EQUITY,
-    "equity": INITIAL_EQUITY,
-    "realized_pnl": 0.0,
-    "active_position": None,
-    "trades_history": [],
-    "telemetry": [],
-    "market_prices": {
-        "SOLUSDT": 161.13,
-        "BTCUSDT": 62917.54,
-        "ETHUSDT": 3514.70, # Scaled realistically
-        "AVAXUSDT": 24.48,
-        "BNBUSDT": 652.65
+def load_state():
+    if os.path.exists(STATE_FILE):
+        try:
+            with open(STATE_FILE, "r") as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"Error loading state file: {e}")
+    
+    # Default initial state if file doesn't exist
+    return {
+        "balance": INITIAL_EQUITY,
+        "equity": INITIAL_EQUITY,
+        "realized_pnl": 0.0,
+        "active_position": None,
+        "trades_history": [],
+        "telemetry": [],
+        "market_prices": {
+            "SOLUSDT": 161.13,
+            "BTCUSDT": 62917.54,
+            "ETHUSDT": 3514.70,
+            "AVAXUSDT": 24.48,
+            "BNBUSDT": 652.65
+        }
     }
-}
+
+def save_state():
+    try:
+        with open(STATE_FILE, "w") as f:
+            json.dump(platform_state, f, indent=4)
+    except Exception as e:
+        print(f"Error saving state file: {e}")
+
+platform_state = load_state()
 
 agents_registry = [
     {"name": "SOL Volatility Scout", "pair": "SOLUSDT", "bias": "LONG"},
@@ -68,17 +88,14 @@ def background_trading_engine():
                     trigger_type = "AUTO_TAKE_PROFIT" if pnl_pct >= 0 else "AUTO_STOP_LOSS"
                     close_trade(trigger_type)
             else:
-                # Select a random agent to open a realistic trade based on current equity
                 agent = random.choice(agents_registry)
                 pair = agent["pair"]
                 price = platform_state["market_prices"][pair]
                 side = agent["bias"]
                 leverage = random.choice([5, 10, 16, 20])
                 
-                # Allocate 25% of current equity as margin (minimum $2 for small accounts)
                 available_balance = platform_state["equity"]
-                if available_balance < 5.0:
-                    # Reset if blown account in test mode
+                if available_balance < 3.0:
                     platform_state["balance"] = INITIAL_EQUITY
                     platform_state["equity"] = INITIAL_EQUITY
                     available_balance = INITIAL_EQUITY
@@ -104,6 +121,8 @@ def background_trading_engine():
                 if len(platform_state["telemetry"]) > 30:
                     platform_state["telemetry"].pop()
 
+            save_state()
+
         except Exception as e:
             print(f"Engine Error: {e}")
 
@@ -113,7 +132,6 @@ def close_trade(trigger_method):
         return
         
     pnl = pos["unrealized_pnl"]
-    # Apply realistic 0.05% exchange taker fee
     fee = (pos["margin"] * pos["leverage"]) * 0.0005
     final_pnl = round(pnl - fee, 2)
     
@@ -138,6 +156,7 @@ def close_trade(trigger_method):
     
     log_msg = f"[{trigger_method}]: Closed {pos['pair']} @ ${pos['current_price']} (${final_pnl})"
     platform_state["telemetry"].insert(0, log_msg)
+    save_state()
 
 @app.route('/')
 def index():
