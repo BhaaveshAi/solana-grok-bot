@@ -3,85 +3,101 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grok Pro - Binance Futures Terminal</title>
+    <title>Grok Pro - Institutional Multi-Agent Terminal</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body { background-color: #0b0e11; color: #eaecef; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         header { background: #181a20; border-bottom: 1px solid #2b313a; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
         h1 { font-size: 18px; color: #f0b90b; font-weight: 700; letter-spacing: 0.5px; }
-        .ticker-bar { display: flex; gap: 15px; background: #181a20; padding: 10px 20px; border-bottom: 1px solid #2b313a; overflow-x: auto; }
-        .ticker-item { background: #21262d; padding: 6px 12px; border-radius: 4px; font-size: 13px; cursor: pointer; border: 1px solid transparent; }
-        .ticker-item.active { border-color: #f0b90b; }
-        .main-layout { display: grid; grid-template-columns: 3fr 1fr; flex: 1; overflow: hidden; }
+        .ticker-bar { display: flex; gap: 12px; background: #181a20; padding: 10px 20px; border-bottom: 1px solid #2b313a; overflow-x: auto; }
+        .ticker-item { background: #21262d; padding: 6px 14px; border-radius: 4px; font-size: 13px; cursor: pointer; border: 1px solid transparent; white-space: nowrap; }
+        .ticker-item.active { border-color: #f0b90b; background: #2b313a; }
+        .main-layout { display: grid; grid-template-columns: 3.2fr 1fr; flex: 1; overflow: hidden; }
         .left-pane { display: flex; flex-direction: column; padding: 15px; overflow-y: auto; gap: 15px; }
         .right-pane { background: #181a20; border-left: 1px solid #2b313a; display: flex; flex-direction: column; padding: 15px; gap: 15px; overflow-y: auto; }
         .card { background: #181a20; border: 1px solid #2b313a; border-radius: 6px; padding: 15px; }
-        .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
-        .metric-title { font-size: 12px; color: #848e9c; margin-bottom: 5px; }
-        .metric-value { font-size: 22px; font-weight: 600; }
+        .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+        .metric-title { font-size: 11px; color: #848e9c; margin-bottom: 4px; font-weight: 600; }
+        .metric-value { font-size: 20px; font-weight: 600; }
         .positive { color: #0ecb81; }
         .negative { color: #f6465d; }
         .btn { background: #f0b90b; color: #000; border: none; padding: 8px 16px; font-weight: 600; border-radius: 4px; cursor: pointer; }
         .btn-danger { background: #f6465d; color: #fff; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
-        th, td { text-align: left; padding: 8px; border-bottom: 1px solid #2b313a; }
+        .btn-warning { background: #f0b90b; color: #000; font-size: 11px; padding: 4px 8px; border-radius: 3px; border: none; cursor: pointer; }
+        .btn-secondary { background: #21262d; color: #eaecef; border: 1px solid #2b313a; padding: 6px 12px; font-size: 12px; border-radius: 4px; cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12px; }
+        th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #2b313a; }
         th { color: #848e9c; }
-        .chart-box { height: 260px; background: #14151a; border-radius: 6px; position: relative; padding: 10px; display: flex; flex-direction: column; justify-content: flex-end; }
-        svg { width: 100%; height: 180px; }
-        .telemetry-box { font-family: monospace; font-size: 11px; background: #0b0e11; padding: 8px; border-radius: 4px; height: 160px; overflow-y: auto; color: #0ecb81; border: 1px solid #2b313a; }
+        .chart-box { height: 210px; background: #14151a; border-radius: 6px; position: relative; padding: 10px; display: flex; flex-direction: column; justify-content: flex-end; }
+        svg { width: 100%; height: 140px; }
+        .telemetry-box { font-family: monospace; font-size: 11px; background: #0b0e11; padding: 8px; border-radius: 4px; height: 120px; overflow-y: auto; color: #0ecb81; border: 1px solid #2b313a; }
+        .status-banner { background: #f6465d; color: #fff; padding: 8px; border-radius: 4px; text-align: center; font-weight: bold; font-size: 12px; margin-bottom: 10px; display: none; }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>GROK PRO - AUTONOMOUS FUTURES (TEST MODE: $<span id="headerEquity">20.00</span>)</h1>
-        <div style="font-size: 13px; background: #21262d; padding: 5px 10px; border-radius: 4px;" id="modeBadge">PAPER RUN ($20.00 DEPOSIT)</div>
+        <h1>GROK PRO - INSTITUTIONAL MULTI-AGENT FUTURES TERMINAL</h1>
+        <div style="display:flex; gap:10px; align-items:center;">
+            <button class="btn-secondary" onclick="window.location.href='/api/export_csv'">📥 EXPORT CSV</button>
+            <div style="font-size: 12px; background: #21262d; padding: 5px 12px; border-radius: 4px; border: 1px solid #f0b90b; color: #f0b90b;" id="modeBadge">TEST MODE ($20 DEPOSIT)</div>
+        </div>
     </header>
 
     <div class="ticker-bar" id="tickerBar"></div>
 
     <div class="main-layout">
         <div class="left-pane">
+            <div id="circuitBanner" class="status-banner">
+                🚨 CIRCUIT BREAKER ACTIVATED (30% MAX DRAWDOWN PROTECTION). 
+                <button class="btn-warning" onclick="resetCircuitBreaker()">RESET SYSTEM</button>
+            </div>
+
+            <!-- Performance Metrics -->
             <div class="metrics-grid">
                 <div class="card">
-                    <div class="metric-title">TOTAL ACCOUNT EQUITY</div>
+                    <div class="metric-title">COMPOUNDED EQUITY</div>
                     <div class="metric-value" id="accountEquity">$20.00</div>
-                    <div style="font-size: 12px; margin-top: 5px;" id="realizedPnlTxt" class="positive">+$0.00 REALIZED PnL</div>
+                    <div style="font-size: 11px; margin-top: 4px;" id="realizedPnlTxt" class="positive">+$0.00 REALIZED PnL</div>
                 </div>
                 <div class="card">
-                    <div class="metric-title">ACTIVE MARGIN ALLOCATION</div>
+                    <div class="metric-title">KELLY MARGIN ALLOC</div>
                     <div class="metric-value" style="color: #f0b90b;" id="marginAlloc">$0.00 (25%)</div>
                 </div>
                 <div class="card">
-                    <div class="metric-title">STRATEGY MODE</div>
-                    <div class="metric-value" style="font-size: 16px; margin-top: 5px;">100% Fully Autonomous</div>
+                    <div class="metric-title">WIN RATE / TRADES</div>
+                    <div class="metric-value" id="winRateTxt" style="color: #0ecb81;">0.0% (0)</div>
+                </div>
+                <div class="card">
+                    <div class="metric-title">PROFIT FACTOR</div>
+                    <div class="metric-value" id="profitFactorTxt" style="color: #f0b90b;">1.00</div>
                 </div>
             </div>
 
-            <!-- Active Position -->
+            <!-- Active Position with Manual Close Button -->
             <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                     <h3>ACTIVE POSITION MANAGEMENT</h3>
                     <button class="btn btn-danger" onclick="manualClose()">CLOSE POSITION NOW ✖</button>
                 </div>
-                <div id="activePositionContainer">No active position running.</div>
+                <div id="activePositionContainer">Scanning order books for high-conviction setup...</div>
             </div>
 
-            <!-- Candlestick Chart Simulation -->
+            <!-- Chart -->
             <div class="card">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                     <h3 id="chartTitle">ETH/USDT PERPETUAL</h3>
-                    <span id="livePriceHeader" class="positive">$3,514.70</span>
+                    <span id="livePriceHeader" class="positive" style="font-weight: 600;">$3,514.70</span>
                 </div>
                 <div class="chart-box">
-                    <svg id="candlestickSvg" viewBox="0 0 600 180" preserveAspectRatio="none"></svg>
+                    <svg id="candlestickSvg" viewBox="0 0 600 140" preserveAspectRatio="none"></svg>
                 </div>
             </div>
 
             <!-- Trade History -->
             <div class="card">
                 <h3>TRADE EXECUTION HISTORY (OPENING & CLOSING LOGS)</h3>
-                <div style="max-height: 200px; overflow-y: auto;">
+                <div style="max-height: 160px; overflow-y: auto;">
                     <table>
                         <thead>
                             <tr>
@@ -96,7 +112,7 @@
                             </tr>
                         </thead>
                         <tbody id="historyTableBody">
-                            <tr><td colspan="8" style="text-align: center; color: #848e9c;">Waiting for bot execution...</td></tr>
+                            <tr><td colspan="8" style="text-align: center; color: #848e9c;">No completed trades yet.</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -112,9 +128,14 @@
                 </table>
             </div>
 
+            <div class="card">
+                <h3>AGENT LEADERBOARD</h3>
+                <div id="agentLeaderboard" style="font-size: 12px; margin-top: 6px;"></div>
+            </div>
+
             <div class="card" style="flex: 1; display: flex; flex-direction: column;">
-                <h3>100% KNOWLEDGE MULTI-AGENT TELEMETRY</h3>
-                <div class="telemetry-box" id="telemetryLog" style="margin-top: 10px; flex: 1;"></div>
+                <h3>TELEMETRY LOGS</h3>
+                <div class="telemetry-box" id="telemetryLog" style="margin-top: 6px;"></div>
             </div>
         </div>
     </div>
@@ -127,9 +148,17 @@
                 .then(res => res.json())
                 .then(data => {
                     document.getElementById('accountEquity').innerText = `$${data.equity.toFixed(2)}`;
-                    document.getElementById('headerEquity').innerText = data.equity.toFixed(2);
                     document.getElementById('realizedPnlTxt').innerText = `${data.realized_pnl >= 0 ? '+' : ''}$${data.realized_pnl.toFixed(2)} REALIZED PnL`;
                     document.getElementById('realizedPnlTxt').className = data.realized_pnl >= 0 ? 'positive' : 'negative';
+
+                    document.getElementById('winRateTxt').innerText = `${data.stats.win_rate}% (${data.stats.total_trades})`;
+                    document.getElementById('profitFactorTxt').innerText = `${data.stats.profit_factor}`;
+
+                    if (data.circuit_breaker_active) {
+                        document.getElementById('circuitBanner').style.display = 'block';
+                    } else {
+                        document.getElementById('circuitBanner').style.display = 'none';
+                    }
 
                     let tickerHtml = '';
                     for (const [pair, price] of Object.entries(data.market_prices)) {
@@ -138,10 +167,21 @@
                     }
                     document.getElementById('tickerBar').innerHTML = tickerHtml;
 
+                    let lbHtml = '';
+                    for (const [agentName, info] of Object.entries(data.agent_performance)) {
+                        let pnlClass = info.pnl >= 0 ? 'positive' : 'negative';
+                        lbHtml += `<div style="display:flex; justify-content:space-between; margin-bottom:4px; border-bottom:1px solid #2b313a; padding-bottom:3px;">
+                            <span>${agentName}</span>
+                            <span class="${pnlClass}">${info.trades} trd | ${info.pnl >= 0 ? '+' : ''}$${info.pnl.toFixed(2)}</span>
+                        </div>`;
+                    }
+                    document.getElementById('agentLeaderboard').innerHTML = lbHtml;
+
                     const pos = data.active_position;
                     const posContainer = document.getElementById('activePositionContainer');
                     if (pos) {
                         let pnlColor = pos.unrealized_pnl >= 0 ? 'positive' : 'negative';
+                        let scaleMsg = pos.scaled_out ? ' <span style="color:#f0b90b;">[50% Scaled Out]</span>' : '';
                         posContainer.innerHTML = `
                             <table style="margin-bottom:0;">
                                 <tr><th>AGENT</th><th>PAIR</th><th>SIDE</th><th>LEVERAGE</th><th>ENTRY</th><th>CURRENT</th><th>MARGIN</th><th>UNREALIZED PnL</th></tr>
@@ -153,13 +193,13 @@
                                     <td>$${pos.entry.toFixed(2)}</td>
                                     <td>$${pos.current_price.toFixed(2)}</td>
                                     <td>$${pos.margin.toFixed(2)}</td>
-                                    <td class="${pnlColor}"><strong>${pos.unrealized_pnl >= 0 ? '+' : ''}$${pos.unrealized_pnl.toFixed(2)} (${pos.pnl_percentage}%)</strong></td>
+                                    <td class="${pnlColor}"><strong>${pos.unrealized_pnl >= 0 ? '+' : ''}$${pos.unrealized_pnl.toFixed(2)} (${pos.pnl_percentage}%)${scaleMsg}</strong></td>
                                 </tr>
                             </table>
                         `;
                         document.getElementById('marginAlloc').innerText = `$${pos.margin.toFixed(2)} (25%)`;
                     } else {
-                        posContainer.innerHTML = `<div style="padding: 10px; color: #848e9c; text-align: center;">Scanning order books for high-conviction setup...</div>`;
+                        posContainer.innerHTML = `<div style="padding: 10px; color: #848e9c; text-align: center;">Scanning order books or cooling down...</div>`;
                         document.getElementById('marginAlloc').innerText = `$0.00 (25%)`;
                     }
 
@@ -194,13 +234,13 @@
                     document.getElementById('livePriceHeader').innerText = `$${currentPrice.toFixed(2)}`;
                     
                     let obHtml = '';
-                    for(let i=1; i<=5; i++) {
+                    for(let i=1; i<=4; i++) {
                         let askPrice = (currentPrice + (i * 0.4)).toFixed(2);
-                        obHtml += `<tr><td class="negative">$${askPrice}</td><td>${(Math.random()*5).toFixed(2)}</td></tr>`;
+                        obHtml += `<tr><td class="negative">$${askPrice}</td><td>${(Math.random()*4).toFixed(2)}</td></tr>`;
                     }
-                    for(let i=5; i>=1; i--) {
+                    for(let i=4; i>=1; i--) {
                         let bidPrice = (currentPrice - (i * 0.4)).toFixed(2);
-                        obHtml += `<tr><td class="positive">$${bidPrice}</td><td>${(Math.random()*5).toFixed(2)}</td></tr>`;
+                        obHtml += `<tr><td class="positive">$${bidPrice}</td><td>${(Math.random()*4).toFixed(2)}</td></tr>`;
                     }
                     document.getElementById('orderBookBody').innerHTML = obHtml;
 
@@ -209,22 +249,24 @@
                         let x = i * 33 + 12;
                         let isGreen = Math.random() > 0.45;
                         let color = isGreen ? '#0ecb81' : '#f6465d';
-                        let openY = 90 + (Math.random() * 40 - 20);
+                        let openY = 70 + (Math.random() * 30 - 15);
                         let closeY = openY + (isGreen ? -15 : 15);
-                        let highY = Math.min(openY, closeY) - 12;
-                        let lowY = Math.max(openY, closeY) + 12;
+                        let highY = Math.min(openY, closeY) - 10;
+                        let lowY = Math.max(openY, closeY) + 10;
 
                         svgContent += `<line x1="${x}" y1="${highY}" x2="${x}" y2="${lowY}" stroke="${color}" stroke-width="1.5" />`;
-                        svgContent += `<rect x="${x-6}" y="${Math.min(openY, closeY)}" width="12" height="${Math.abs(closeY - openY)}" fill="${color}" rx="1" />`;
+                        svgContent += `<rect x="${x-5}" y="${Math.min(openY, closeY)}" width="10" height="${Math.abs(closeY - openY)}" fill="${color}" rx="1" />`;
                     }
                     document.getElementById('candlestickSvg').innerHTML = svgContent;
                 });
         }
 
         function manualClose() {
-            fetch('/api/close_position', { method: 'POST' })
-                .then(res => res.json())
-                .then(data => { console.log(data); });
+            fetch('/api/close_position', { method: 'POST' }).then(res => res.json()).then(data => console.log(data));
+        }
+
+        function resetCircuitBreaker() {
+            fetch('/api/reset_circuit_breaker', { method: 'POST' }).then(res => res.json()).then(data => console.log(data));
         }
 
         setInterval(updatePlatformState, 2000);
