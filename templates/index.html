@@ -3,76 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grok Pro - Institutional Multi-Agent Terminal</title>
+    <title>Grok Pro - Binance Futures Pro Terminal</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body { background-color: #07090c; color: #eaecef; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        
-        /* Header Styling */
-        header { background: #12161c; border-bottom: 1px: solid #21262d; border-bottom: 1px solid #1f2630; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
-        h1 { font-size: 17px; color: #f0b90b; font-weight: 700; letter-spacing: 0.8px; display: flex; align-items: center; gap: 8px; }
-        h1::before { content: ""; display: inline-block; width: 8px; height: 8px; background: #0ecb81; border-radius: 50%; box-shadow: 0 0 8px #0ecb81; }
-
-        /* Ticker Bar */
+        body { background-color: #0b0e11; color: #eaecef; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        header { background: #12161c; border-bottom: 1px solid #1f2630; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; }
+        h1 { font-size: 16px; color: #f0b90b; font-weight: 700; letter-spacing: 0.5px; }
         .ticker-bar { display: flex; gap: 12px; background: #0f1318; padding: 10px 24px; border-bottom: 1px solid #1f2630; overflow-x: auto; }
-        .ticker-item { background: #161b22; padding: 6px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; border: 1px solid #21262d; white-space: nowrap; transition: all 0.2s ease; }
-        .ticker-item:hover { border-color: #f0b90b; }
-        .ticker-item.active { border-color: #f0b90b; background: #1f2630; box-shadow: 0 0 10px rgba(240, 185, 11, 0.15); }
-
-        /* Layout Grid */
-        .main-layout { display: grid; grid-template-columns: 3.2fr 1fr; flex: 1; overflow: hidden; background: #07090c; }
-        .left-pane { display: flex; flex-direction: column; padding: 16px; overflow-y: auto; gap: 16px; }
-        .right-pane { background: #12161c; border-left: 1px solid #1f2630; display: flex; flex-direction: column; padding: 16px; gap: 16px; overflow-y: auto; }
-
-        /* Glass Cards */
-        .card { background: #12161c; border: 1px solid #1f2630; border-radius: 8px; padding: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-        .card h3 { font-size: 12px; color: #848e9c; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; font-weight: 600; }
-
-        /* Metrics Row */
-        .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-        .metric-title { font-size: 11px; color: #848e9c; margin-bottom: 4px; font-weight: 600; text-transform: uppercase; }
-        .metric-value { font-size: 21px; font-weight: 700; letter-spacing: 0.3px; }
-
-        .positive { color: #0ecb81; text-shadow: 0 0 10px rgba(14, 203, 129, 0.15); }
-        .negative { color: #f6465d; text-shadow: 0 0 10px rgba(246, 70, 93, 0.15); }
-
-        /* Buttons */
-        .btn { background: #f0b90b; color: #07090c; border: none; padding: 8px 16px; font-weight: 700; border-radius: 6px; cursor: pointer; transition: opacity 0.2s; }
-        .btn:hover { opacity: 0.9; }
-        .btn-danger { background: #f6465d; color: #fff; box-shadow: 0 0 10px rgba(246, 70, 93, 0.2); }
-        .btn-warning { background: #f0b90b; color: #07090c; font-size: 11px; padding: 4px 8px; border-radius: 4px; border: none; cursor: pointer; font-weight: 700; }
-        .btn-secondary { background: #161b22; color: #eaecef; border: 1px solid #30363d; padding: 6px 12px; font-size: 12px; border-radius: 6px; cursor: pointer; font-weight: 600; }
-        .btn-secondary:hover { border-color: #f0b90b; color: #f0b90b; }
-
-        /* Tables */
+        .ticker-item { background: #161b22; padding: 6px 14px; border-radius: 4px; font-size: 13px; cursor: pointer; border: 1px solid #21262d; white-space: nowrap; }
+        .ticker-item.active { border-color: #f0b90b; background: #1f2630; }
+        .main-layout { display: grid; grid-template-columns: 3.2fr 1fr; flex: 1; overflow: hidden; }
+        .left-pane { display: flex; flex-direction: column; padding: 16px; overflow-y: auto; gap: 14px; }
+        .right-pane { background: #12161c; border-left: 1px solid #1f2630; display: flex; flex-direction: column; padding: 16px; gap: 14px; overflow-y: auto; }
+        .card { background: #12161c; border: 1px solid #1f2630; border-radius: 6px; padding: 14px; }
+        .metrics-grid { display: grid; grid-template-columns: 2.5fr 1.5fr; gap: 12px; }
+        .positive { color: #0ecb81; }
+        .negative { color: #f6465d; }
+        .btn { background: #f0b90b; color: #0b0e11; border: none; padding: 8px 16px; font-weight: 700; border-radius: 4px; cursor: pointer; }
+        .btn-danger { background: #f6465d; color: #fff; font-size: 11px; padding: 4px 10px; font-weight: 600; }
+        .btn-green { background: #0ecb81; color: #0b0e11; font-weight: 700; flex: 1; padding: 10px; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-red { background: #f6465d; color: #fff; font-weight: 700; flex: 1; padding: 10px; border: none; border-radius: 4px; cursor: pointer; }
         table { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 12px; }
-        th, td { text-align: left; padding: 8px; border-bottom: 1px solid #1f2630; }
-        th { color: #848e9c; font-weight: 600; text-transform: uppercase; font-size: 11px; }
-
-        /* Chart Section */
-        .chart-box { height: 220px; background: #0a0d12; border-radius: 6px; border: 1px solid #1f2630; position: relative; padding: 12px; display: flex; flex-direction: column; justify-content: flex-end; }
-        svg { width: 100%; height: 140px; }
-
-        /* Telemetry & Logs */
-        .telemetry-box { font-family: "Courier New", Courier, monospace; font-size: 11px; background: #07090c; padding: 10px; border-radius: 6px; height: 130px; overflow-y: auto; color: #0ecb81; border: 1px solid #1f2630; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
-        
-        /* Status Banner */
-        .status-banner { background: rgba(246, 70, 93, 0.15); border: 1px solid #f6465d; color: #f6465d; padding: 10px; border-radius: 6px; text-align: center; font-weight: bold; font-size: 12px; margin-bottom: 10px; display: none; }
-
-        /* Scrollbar Theme */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #07090c; }
-        ::-webkit-scrollbar-thumb { background: #21262d; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #30363d; }
+        th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #1f2630; }
+        th { color: #848e9c; font-size: 11px; }
+        .chart-box { height: 200px; background: #0a0d12; border-radius: 6px; position: relative; padding: 10px; display: flex; flex-direction: column; justify-content: flex-end; }
+        svg { width: 100%; height: 130px; }
+        .telemetry-box { font-family: monospace; font-size: 11px; background: #07090c; padding: 8px; border-radius: 4px; height: 140px; overflow-y: auto; color: #0ecb81; border: 1px solid #1f2630; }
+        .vault-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 6px; }
+        .vault-box { background: #161b22; border: 1px solid #21262d; border-radius: 4px; padding: 8px; text-align: center; font-size: 11px; }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>GROK PRO <span style="font-size: 11px; color: #848e9c; font-weight: 400; margin-left: 6px;">| Institutional Multi-Agent Engine</span></h1>
+        <h1>GROK BOT AUTOMATED TRADING PLATFORM</h1>
         <div style="display:flex; gap:12px; align-items:center;">
-            <button class="btn-secondary" onclick="window.location.href='/api/export_csv'">📥 EXPORT CSV</button>
-            <div style="font-size: 12px; background: #161b22; padding: 6px 14px; border-radius: 6px; border: 1px solid rgba(240, 185, 11, 0.3); color: #f0b90b; font-weight: 600;" id="modeBadge">TEST MODE ($20 DEPOSIT)</div>
+            <button class="btn" style="background:#161b22; color:#eaecef; border:1px solid #30363d; font-size:12px; padding:6px 12px;" onclick="window.location.href='/api/export_csv'">📥 EXPORT CSV</button>
+            <div style="font-size: 12px; background: #161b22; padding: 5px 12px; border-radius: 4px; border: 1px solid #0ecb81; color: #0ecb81; font-weight: 700;" id="modeBadge">PAPER RUN ($100.00)</div>
         </div>
     </header>
 
@@ -80,94 +47,93 @@
 
     <div class="main-layout">
         <div class="left-pane">
-            <div id="circuitBanner" class="status-banner">
-                🚨 CIRCUIT BREAKER ACTIVATED (30% MAX DRAWDOWN PROTECTION). 
-                <button class="btn-warning" onclick="resetCircuitBreaker()" style="margin-left: 8px;">RESET SYSTEM</button>
-            </div>
-
-            <!-- Performance Metrics -->
+            <!-- Metrics Row -->
             <div class="metrics-grid">
                 <div class="card">
-                    <div class="metric-title">Compounded Equity</div>
-                    <div class="metric-value" id="accountEquity">$20.00</div>
-                    <div style="font-size: 11px; margin-top: 4px;" id="realizedPnlTxt" class="positive">+$0.00 REALIZED PnL</div>
+                    <div style="font-size:11px; color:#848e9c; font-weight:600;">TOTAL ACCOUNT EQUITY</div>
+                    <div style="font-size:24px; font-weight:700; margin-top:2px;" id="accountEquity">$100.00</div>
+                    <div style="font-size:11px; margin-top:2px;" id="realizedPnlTxt" class="positive">+$0.00 REALIZED PROFIT</div>
                 </div>
-                <div class="card">
-                    <div class="metric-title">Kelly Margin Alloc</div>
-                    <div class="metric-value" style="color: #f0b90b;" id="marginAlloc">$0.00 (25%)</div>
-                </div>
-                <div class="card">
-                    <div class="metric-title">Win Rate / Trades</div>
-                    <div class="metric-value" id="winRateTxt" style="color: #0ecb81;">0.0% (0)</div>
-                </div>
-                <div class="card">
-                    <div class="metric-title">Profit Factor</div>
-                    <div class="metric-value" id="profitFactorTxt" style="color: #f0b90b;">1.00</div>
+                <div class="card" style="text-align: right;">
+                    <div style="font-size:11px; color:#848e9c; font-weight:600;">OPTIMAL MARGIN ALLOCATION</div>
+                    <div style="font-size:20px; font-weight:700; color:#f0b90b; margin-top:2px;" id="marginAlloc">$25.00 (25%)</div>
+                    <div style="font-size:10px; color:#848e9c; margin-top:2px;">KELLY CRITERION CAP</div>
                 </div>
             </div>
 
-            <!-- Active Position -->
+            <!-- Active Position Management -->
             <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <h3>Active Position Management</h3>
-                    <button class="btn btn-danger" onclick="manualClose()" style="padding: 6px 12px; font-size: 11px;">CLOSE POSITION NOW ✖</button>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <h3 style="font-size:12px; color:#848e9c;">ACTIVE POSITION MANAGEMENT</h3>
+                    <button class="btn-danger" onclick="manualClose()">CLOSE POSITION NOW ✖</button>
                 </div>
-                <div id="activePositionContainer" style="color: #848e9c; font-size: 13px;">Scanning order books or cooling down...</div>
+                <div id="activePositionContainer">Loading position data...</div>
             </div>
 
-            <!-- Chart -->
+            <!-- Chart & Execution -->
             <div class="card">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center;">
-                    <h3 id="chartTitle" style="margin:0;">ETH/USDT PERPETUAL</h3>
-                    <span id="livePriceHeader" class="positive" style="font-weight: 700; font-size: 14px;">$3,514.70</span>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px; align-items:center;">
+                    <div style="font-weight:700; font-size:13px;" id="chartTitle">ETH/USDT PERPETUAL <span style="color:#f0b90b; font-size:11px;">16x</span></div>
+                    <span id="livePriceHeader" class="positive" style="font-weight: 700;">$3,365.56</span>
                 </div>
                 <div class="chart-box">
-                    <svg id="candlestickSvg" viewBox="0 0 600 140" preserveAspectRatio="none"></svg>
+                    <svg id="candlestickSvg" viewBox="0 0 600 130" preserveAspectRatio="none"></svg>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button class="btn-green" onclick="alert('Autonomous Agent Active: Managing positions automatically!')">AUTOMATED BUY / LONG</button>
+                    <button class="btn-red" onclick="alert('Autonomous Agent Active: Managing positions automatically!')">AUTOMATED SELL / SHORT</button>
                 </div>
             </div>
 
-            <!-- Trade History -->
+            <!-- Big Closes Profit Vault -->
             <div class="card">
-                <h3>Trade Execution History (Opening & Closing Logs)</h3>
-                <div style="max-height: 160px; overflow-y: auto;">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Time</th>
-                                <th>Pair</th>
-                                <th>Side</th>
-                                <th>Leverage</th>
-                                <th>Open Price</th>
-                                <th>Close Price</th>
-                                <th>PnL</th>
-                                <th>Trigger</th>
-                            </tr>
-                        </thead>
-                        <tbody id="historyTableBody">
-                            <tr><td colspan="8" style="text-align: center; color: #848e9c;">No completed trades yet.</td></tr>
-                        </tbody>
-                    </table>
+                <div style="display:flex; justify-content:space-between; font-size:12px; color:#848e9c; margin-bottom:6px;">
+                    <span>BIG CLOSES PROFIT VAULT (1/5)</span>
+                    <span class="positive">+ $1,649 TOTAL PROFIT</span>
+                </div>
+                <div class="vault-grid">
+                    <div class="vault-box"><div style="font-weight:bold;">XLM</div><div style="color:#848e9c; font-size:10px;">10x SHORT</div><div class="positive" style="margin-top:2px;">+$30</div></div>
+                    <div class="vault-box" style="border-color:#f0b90b;"><div style="font-weight:bold;">ETH</div><div style="color:#848e9c; font-size:10px;">16x LONG</div><div class="positive" style="margin-top:2px;">+$63</div></div>
+                    <div class="vault-box"><div style="font-weight:bold;">BCH</div><div style="color:#848e9c; font-size:10px;">16x LONG</div><div class="positive" style="margin-top:2px;">+$153</div></div>
+                    <div class="vault-box"><div style="font-weight:bold;">AVAX</div><div style="color:#848e9c; font-size:10px;">11x LONG</div><div class="positive" style="margin-top:2px;">+$312</div></div>
+                    <div class="vault-box"><div style="font-weight:bold;">BNB</div><div style="color:#848e9c; font-size:10px;">23x SHORT</div><div class="positive" style="margin-top:2px;">+$891</div></div>
                 </div>
             </div>
         </div>
 
         <div class="right-pane">
             <div class="card">
-                <h3>Order Book Depth</h3>
+                <div style="display:flex; justify-content:space-between; font-size:12px; color:#848e9c;">
+                    <span>ORDER BOOK DEPTH</span>
+                    <span>SPREAD: 0.01%</span>
+                </div>
                 <table>
-                    <thead><tr><th>Price</th><th>Size</th></tr></thead>
+                    <thead><tr><th>PRICE</th><th style="text-align:right;">SIZE</th></tr></thead>
                     <tbody id="orderBookBody"></tbody>
                 </table>
             </div>
 
             <div class="card">
-                <h3>Agent Leaderboard</h3>
-                <div id="agentLeaderboard" style="font-size: 12px; margin-top: 6px;"></div>
+                <div style="display:flex; justify-content:space-between; font-size:12px; color:#848e9c; margin-bottom:4px;">
+                    <span>100% KNOWLEDGE MULTI-AGENT TELEMETRY</span>
+                    <span class="positive">100% IQ ACTIVE</span>
+                </div>
+                <div class="telemetry-box" id="telemetryLog"></div>
             </div>
 
-            <div class="card" style="flex: 1; display: flex; flex-direction: column;">
-                <h3>Telemetry Logs</h3>
-                <div class="telemetry-box" id="telemetryLog" style="margin-top: 6px;"></div>
+            <div class="card" style="flex:1;">
+                <div style="display:flex; justify-content:space-between; font-size:12px; color:#848e9c; margin-bottom:4px;">
+                    <span>LIVE TRADING NEWS</span>
+                    <span class="positive" style="font-size:10px;">FEED ACTIVE</span>
+                </div>
+                <div style="font-size:11px; background:#161b22; padding:8px; border-radius:4px; margin-bottom:6px;">
+                    <strong style="color:#0ecb81;">JUST NOW - BULLISH 92%</strong><br>
+                    Solana DEX 24h volume surges past $2.8B amid high perpetual open interest.
+                </div>
+                <div style="font-size:11px; background:#161b22; padding:8px; border-radius:4px;">
+                    <strong style="color:#0ecb81;">5m AGO - BULLISH 84%</strong><br>
+                    Federal Reserve liquidity guidance triggers aggressive altcoin short squeezes.
+                </div>
             </div>
         </div>
     </div>
@@ -180,114 +146,72 @@
                 .then(res => res.json())
                 .then(data => {
                     document.getElementById('accountEquity').innerText = `$${data.equity.toFixed(2)}`;
-                    document.getElementById('realizedPnlTxt').innerText = `${data.realized_pnl >= 0 ? '+' : ''}$${data.realized_pnl.toFixed(2)} REALIZED PnL`;
+                    document.getElementById('realizedPnlTxt').innerText = `${data.realized_pnl >= 0 ? '+' : ''}$${data.realized_pnl.toFixed(2)} REALIZED PROFIT`;
                     document.getElementById('realizedPnlTxt').className = data.realized_pnl >= 0 ? 'positive' : 'negative';
-
-                    document.getElementById('winRateTxt').innerText = `${data.stats.win_rate}% (${data.stats.total_trades})`;
-                    document.getElementById('profitFactorTxt').innerText = `${data.stats.profit_factor}`;
-
-                    if (data.circuit_breaker_active) {
-                        document.getElementById('circuitBanner').style.display = 'block';
-                    } else {
-                        document.getElementById('circuitBanner').style.display = 'none';
-                    }
 
                     let tickerHtml = '';
                     for (const [pair, price] of Object.entries(data.market_prices)) {
                         let activeClass = pair === currentSelectedPair ? 'ticker-item active' : 'ticker-item';
-                        tickerHtml += `<div class="${activeClass}" onclick="currentSelectedPair='${pair}'"><strong>${pair}</strong> <span class="positive" style="margin-left:6px;">$${price.toFixed(2)}</span></div>`;
+                        tickerHtml += `<div class="${activeClass}" onclick="currentSelectedPair='${pair}'"><strong>${pair}</strong> <span class="positive">$${price.toFixed(2)}</span></div>`;
                     }
                     document.getElementById('tickerBar').innerHTML = tickerHtml;
-
-                    let lbHtml = '';
-                    for (const [agentName, info] of Object.entries(data.agent_performance)) {
-                        let pnlClass = info.pnl >= 0 ? 'positive' : 'negative';
-                        lbHtml += `<div style="display:flex; justify-content:space-between; margin-bottom:6px; border-bottom:1px solid #1f2630; padding-bottom:4px;">
-                            <span style="color: #c9d1d9;">${agentName}</span>
-                            <span class="${pnlClass}">${info.trades} trd | ${info.pnl >= 0 ? '+' : ''}$${info.pnl.toFixed(2)}</span>
-                        </div>`;
-                    }
-                    document.getElementById('agentLeaderboard').innerHTML = lbHtml;
 
                     const pos = data.active_position;
                     const posContainer = document.getElementById('activePositionContainer');
                     if (pos) {
                         let pnlColor = pos.unrealized_pnl >= 0 ? 'positive' : 'negative';
-                        let scaleMsg = pos.scaled_out ? ' <span style="color:#f0b90b;">[50% Scaled Out]</span>' : '';
                         posContainer.innerHTML = `
-                            <table style="margin-bottom:0;">
-                                <tr><th>Agent</th><th>Pair</th><th>Side</th><th>Leverage</th><th>Entry</th><th>Current</th><th>Margin</th><th>Unrealized PnL</th></tr>
+                            <table>
+                                <tr><th>EXECUTING AGENT</th><th>PAIR</th><th>SIDE</th><th>LEVERAGE</th><th>OPEN (ENTRY)</th><th>CURRENT PRICE</th><th>MARGIN</th><th>UNREALIZED PnL</th><th>ACTION</th></tr>
                                 <tr>
-                                    <td><span style="color:#f0b90b; font-weight:600;">[${pos.agent}]</span></td>
+                                    <td><span style="color:#f0b90b;">[${pos.agent}]</span></td>
                                     <td><strong>${pos.pair}</strong></td>
                                     <td class="${pos.side === 'LONG' ? 'positive' : 'negative'}"><strong>${pos.side}</strong></td>
                                     <td>${pos.leverage}x</td>
                                     <td>$${pos.entry.toFixed(2)}</td>
                                     <td>$${pos.current_price.toFixed(2)}</td>
                                     <td>$${pos.margin.toFixed(2)}</td>
-                                    <td class="${pnlColor}"><strong>${pos.unrealized_pnl >= 0 ? '+' : ''}$${pos.unrealized_pnl.toFixed(2)} (${pos.pnl_percentage}%)${scaleMsg}</strong></td>
+                                    <td class="${pnlColor}"><strong>${pos.unrealized_pnl >= 0 ? '+' : ''}$${pos.unrealized_pnl.toFixed(2)} (+${pos.pnl_percentage}%)</strong></td>
+                                    <td><button class="btn-danger" onclick="manualClose()">CLOSE</button></td>
                                 </tr>
                             </table>
                         `;
                         document.getElementById('marginAlloc').innerText = `$${pos.margin.toFixed(2)} (25%)`;
                     } else {
-                        posContainer.innerHTML = `<div style="padding: 6px; color: #848e9c; text-align: center;">Scanning order books or cooling down...</div>`;
-                        document.getElementById('marginAlloc').innerText = `$0.00 (25%)`;
+                        posContainer.innerHTML = `<div style="padding: 10px; color: #848e9c; text-align: center;">Scanning order books for next setup...</div>`;
                     }
-
-                    let historyHtml = '';
-                    if (data.trades_history.length === 0) {
-                        historyHtml = `<tr><td colspan="8" style="text-align: center; color: #848e9c;">No completed trades yet.</td></tr>`;
-                    } else {
-                        data.trades_history.forEach(h => {
-                            let pnlClass = h.raw_pnl >= 0 ? 'positive' : 'negative';
-                            historyHtml += `
-                                <tr>
-                                    <td style="color: #848e9c;">${h.time}</td>
-                                    <td><strong>${h.pair}</strong></td>
-                                    <td class="${h.side === 'LONG' ? 'positive' : 'negative'}">${h.side}</td>
-                                    <td>${h.leverage}</td>
-                                    <td>${h.open_price}</td>
-                                    <td>${h.close_price}</td>
-                                    <td class="${pnlClass}"><strong>${h.pnl}</strong></td>
-                                    <td><span style="font-size:10px; background:#161b22; border: 1px solid #30363d; padding:2px 6px; border-radius:4px; color:#c9d1d9;">${h.trigger}</span></td>
-                                </tr>
-                            `;
-                        });
-                    }
-                    document.getElementById('historyTableBody').innerHTML = historyHtml;
 
                     let telemetryHtml = '';
                     data.telemetry.forEach(t => { telemetryHtml += `${t}<br>`; });
                     document.getElementById('telemetryLog').innerHTML = telemetryHtml;
 
                     let currentPrice = data.market_prices[currentSelectedPair];
-                    document.getElementById('chartTitle').innerText = `${currentSelectedPair} PERPETUAL`;
                     document.getElementById('livePriceHeader').innerText = `$${currentPrice.toFixed(2)}`;
-                    
+
                     let obHtml = '';
                     for(let i=1; i<=4; i++) {
                         let askPrice = (currentPrice + (i * 0.4)).toFixed(2);
-                        obHtml += `<tr><td class="negative">$${askPrice}</td><td>${(Math.random()*4).toFixed(2)}</td></tr>`;
+                        let size = (Math.random() * 15 + 2).toFixed(1);
+                        obHtml += `<tr><td class="negative">$${askPrice}</td><td style="text-align:right;">${size}</td></tr>`;
                     }
                     for(let i=4; i>=1; i--) {
                         let bidPrice = (currentPrice - (i * 0.4)).toFixed(2);
-                        obHtml += `<tr><td class="positive">$${bidPrice}</td><td>${(Math.random()*4).toFixed(2)}</td></tr>`;
+                        let size = (Math.random() * 15 + 2).toFixed(1);
+                        obHtml += `<tr><td class="positive">$${bidPrice}</td><td style="text-align:right;">${size}</td></tr>`;
                     }
                     document.getElementById('orderBookBody').innerHTML = obHtml;
 
                     let svgContent = '';
                     for(let i=0; i<18; i++) {
                         let x = i * 33 + 12;
-                        let isGreen = Math.random() > 0.42;
+                        let isGreen = Math.random() > 0.4;
                         let color = isGreen ? '#0ecb81' : '#f6465d';
-                        let openY = 70 + (Math.random() * 30 - 15);
-                        let closeY = openY + (isGreen ? -16 : 16);
+                        let openY = 60 + (Math.random() * 30 - 15);
+                        let closeY = openY + (isGreen ? -18 : 18);
                         let highY = Math.min(openY, closeY) - 10;
                         let lowY = Math.max(openY, closeY) + 10;
-
-                        svgContent += `<line x1="${x}" y1="${highY}" x2="${x}" y2="${lowY}" stroke="${color}" stroke-width="1.5" opacity="0.8" />`;
-                        svgContent += `<rect x="${x-5}" y="${Math.min(openY, closeY)}" width="10" height="${Math.abs(closeY - openY)}" fill="${color}" rx="1.5" />`;
+                        svgContent += `<line x1="${x}" y1="${highY}" x2="${x}" y2="${lowY}" stroke="${color}" stroke-width="1.5" />`;
+                        svgContent += `<rect x="${x-5}" y="${Math.min(openY, closeY)}" width="10" height="${Math.abs(closeY - openY)}" fill="${color}" rx="1" />`;
                     }
                     document.getElementById('candlestickSvg').innerHTML = svgContent;
                 });
@@ -295,10 +219,6 @@
 
         function manualClose() {
             fetch('/api/close_position', { method: 'POST' }).then(res => res.json()).then(data => console.log(data));
-        }
-
-        function resetCircuitBreaker() {
-            fetch('/api/reset_circuit_breaker', { method: 'POST' }).then(res => res.json()).then(data => console.log(data));
         }
 
         setInterval(updatePlatformState, 2000);
