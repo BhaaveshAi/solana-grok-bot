@@ -9,7 +9,7 @@ app = Flask(__name__)
 
 # Configuration & State File
 LIVE_MODE = False  # Set to True when API keys are configured in Render
-INITIAL_EQUITY = 20.0  # Configurable starting capital (e.g., $20 test deposit)
+INITIAL_EQUITY = 20.0  # Configurable starting capital ($20 test deposit)
 STATE_FILE = "platform_state.json"
 
 def load_state():
@@ -20,7 +20,6 @@ def load_state():
         except Exception as e:
             print(f"Error loading state file: {e}")
     
-    # Default initial state if file doesn't exist
     return {
         "balance": INITIAL_EQUITY,
         "equity": INITIAL_EQUITY,
@@ -59,7 +58,6 @@ def background_trading_engine():
         try:
             time.sleep(3.0)
             
-            # Simulate natural price fluctuations
             for pair in platform_state["market_prices"]:
                 fluctuation = random.uniform(-0.003, 0.003)
                 platform_state["market_prices"][pair] = round(platform_state["market_prices"][pair] * (1 + fluctuation), 2)
@@ -67,7 +65,6 @@ def background_trading_engine():
             pos = platform_state["active_position"]
             
             if pos:
-                # Update active position PnL based on current price
                 current_price = platform_state["market_prices"][pos["pair"]]
                 entry = pos["entry"]
                 leverage = pos["leverage"]
@@ -83,7 +80,6 @@ def background_trading_engine():
                 pos["unrealized_pnl"] = round(unrealized, 2)
                 pos["pnl_percentage"] = round(pnl_pct * 100 * leverage, 2)
                 
-                # Check take profit (+15%) or stop loss (-10%)
                 if pnl_pct * leverage >= 0.15 or pnl_pct * leverage <= -0.10:
                     trigger_type = "AUTO_TAKE_PROFIT" if pnl_pct >= 0 else "AUTO_STOP_LOSS"
                     close_trade(trigger_type)

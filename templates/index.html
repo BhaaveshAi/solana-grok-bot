@@ -74,9 +74,7 @@
                     <span id="livePriceHeader" class="positive">$3,514.70</span>
                 </div>
                 <div class="chart-box">
-                    <svg id="candlestickSvg" viewBox="0 0 600 180" preserveAspectRatio="none">
-                        <!-- Dynamic SVG candlesticks injected via JS -->
-                    </svg>
+                    <svg id="candlestickSvg" viewBox="0 0 600 180" preserveAspectRatio="none"></svg>
                 </div>
             </div>
 
@@ -133,7 +131,6 @@
                     document.getElementById('realizedPnlTxt').innerText = `${data.realized_pnl >= 0 ? '+' : ''}$${data.realized_pnl.toFixed(2)} REALIZED PnL`;
                     document.getElementById('realizedPnlTxt').className = data.realized_pnl >= 0 ? 'positive' : 'negative';
 
-                    // Update Ticker Bar
                     let tickerHtml = '';
                     for (const [pair, price] of Object.entries(data.market_prices)) {
                         let activeClass = pair === currentSelectedPair ? 'ticker-item active' : 'ticker-item';
@@ -141,7 +138,6 @@
                     }
                     document.getElementById('tickerBar').innerHTML = tickerHtml;
 
-                    // Update Active Position
                     const pos = data.active_position;
                     const posContainer = document.getElementById('activePositionContainer');
                     if (pos) {
@@ -167,7 +163,6 @@
                         document.getElementById('marginAlloc').innerText = `$0.00 (25%)`;
                     }
 
-                    // Update History Table
                     let historyHtml = '';
                     if (data.trades_history.length === 0) {
                         historyHtml = `<tr><td colspan="8" style="text-align: center; color: #848e9c;">No completed trades yet.</td></tr>`;
@@ -190,12 +185,10 @@
                     }
                     document.getElementById('historyTableBody').innerHTML = historyHtml;
 
-                    // Update Telemetry Logs
                     let telemetryHtml = '';
                     data.telemetry.forEach(t => { telemetryHtml += `${t}<br>`; });
                     document.getElementById('telemetryLog').innerHTML = telemetryHtml;
 
-                    // Update Order Book
                     let currentPrice = data.market_prices[currentSelectedPair];
                     document.getElementById('chartTitle').innerText = `${currentSelectedPair} PERPETUAL`;
                     document.getElementById('livePriceHeader').innerText = `$${currentPrice.toFixed(2)}`;
@@ -203,7 +196,6 @@
                     let obHtml = '';
                     for(let i=1; i<=5; i++) {
                         let askPrice = (currentPrice + (i * 0.4)).toFixed(2);
-                        let bidPrice = (currentPrice - (i * 0.4)).toFixed(2);
                         obHtml += `<tr><td class="negative">$${askPrice}</td><td>${(Math.random()*5).toFixed(2)}</td></tr>`;
                     }
                     for(let i=5; i>=1; i--) {
@@ -212,9 +204,7 @@
                     }
                     document.getElementById('orderBookBody').innerHTML = obHtml;
 
-                    // Render Candlestick Chart SVG
                     let svgContent = '';
-                    let baseP = currentPrice - 5;
                     for(let i=0; i<18; i++) {
                         let x = i * 33 + 12;
                         let isGreen = Math.random() > 0.45;
