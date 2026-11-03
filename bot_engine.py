@@ -11,16 +11,7 @@ INITIAL_EQUITY = 20.0
 STATE_FILE = "platform_state.json"
 
 def load_state():
-    # If state file exists, load it; otherwise initialize cleanly in memory
-    if os.path.exists(STATE_FILE):
-        try:
-            with open(STATE_FILE, "r") as f:
-                data = json.load(f)
-                print("Successfully loaded existing platform state from disk.")
-                return data
-        except Exception as e:
-            print(f"Error loading state file: {e}")
-
+    # Always start fresh to clear any stuck cooldown cache on Render
     return {
         "balance": INITIAL_EQUITY,
         "equity": INITIAL_EQUITY,
@@ -48,7 +39,7 @@ def load_state():
         },
         "active_position": None,
         "trades_history": [],
-        "telemetry": ["[SYSTEM]: Engine initialized successfully. Ready for live scanning."],
+        "telemetry": ["[SYSTEM]: Fresh state loaded. Forcing instant market scan..."],
         "market_prices": {
             "SOLUSDT": 161.13,
             "BTCUSDT": 62917.54,
