@@ -6,41 +6,73 @@
     <title>Grok Pro - Institutional Multi-Agent Terminal</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body { background-color: #0b0e11; color: #eaecef; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        header { background: #181a20; border-bottom: 1px solid #2b313a; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
-        h1 { font-size: 18px; color: #f0b90b; font-weight: 700; letter-spacing: 0.5px; }
-        .ticker-bar { display: flex; gap: 12px; background: #181a20; padding: 10px 20px; border-bottom: 1px solid #2b313a; overflow-x: auto; }
-        .ticker-item { background: #21262d; padding: 6px 14px; border-radius: 4px; font-size: 13px; cursor: pointer; border: 1px solid transparent; white-space: nowrap; }
-        .ticker-item.active { border-color: #f0b90b; background: #2b313a; }
-        .main-layout { display: grid; grid-template-columns: 3.2fr 1fr; flex: 1; overflow: hidden; }
-        .left-pane { display: flex; flex-direction: column; padding: 15px; overflow-y: auto; gap: 15px; }
-        .right-pane { background: #181a20; border-left: 1px solid #2b313a; display: flex; flex-direction: column; padding: 15px; gap: 15px; overflow-y: auto; }
-        .card { background: #181a20; border: 1px solid #2b313a; border-radius: 6px; padding: 15px; }
+        body { background-color: #07090c; color: #eaecef; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        
+        /* Header Styling */
+        header { background: #12161c; border-bottom: 1px: solid #21262d; border-bottom: 1px solid #1f2630; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        h1 { font-size: 17px; color: #f0b90b; font-weight: 700; letter-spacing: 0.8px; display: flex; align-items: center; gap: 8px; }
+        h1::before { content: ""; display: inline-block; width: 8px; height: 8px; background: #0ecb81; border-radius: 50%; box-shadow: 0 0 8px #0ecb81; }
+
+        /* Ticker Bar */
+        .ticker-bar { display: flex; gap: 12px; background: #0f1318; padding: 10px 24px; border-bottom: 1px solid #1f2630; overflow-x: auto; }
+        .ticker-item { background: #161b22; padding: 6px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; border: 1px solid #21262d; white-space: nowrap; transition: all 0.2s ease; }
+        .ticker-item:hover { border-color: #f0b90b; }
+        .ticker-item.active { border-color: #f0b90b; background: #1f2630; box-shadow: 0 0 10px rgba(240, 185, 11, 0.15); }
+
+        /* Layout Grid */
+        .main-layout { display: grid; grid-template-columns: 3.2fr 1fr; flex: 1; overflow: hidden; background: #07090c; }
+        .left-pane { display: flex; flex-direction: column; padding: 16px; overflow-y: auto; gap: 16px; }
+        .right-pane { background: #12161c; border-left: 1px solid #1f2630; display: flex; flex-direction: column; padding: 16px; gap: 16px; overflow-y: auto; }
+
+        /* Glass Cards */
+        .card { background: #12161c; border: 1px solid #1f2630; border-radius: 8px; padding: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .card h3 { font-size: 12px; color: #848e9c; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; font-weight: 600; }
+
+        /* Metrics Row */
         .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-        .metric-title { font-size: 11px; color: #848e9c; margin-bottom: 4px; font-weight: 600; }
-        .metric-value { font-size: 20px; font-weight: 600; }
-        .positive { color: #0ecb81; }
-        .negative { color: #f6465d; }
-        .btn { background: #f0b90b; color: #000; border: none; padding: 8px 16px; font-weight: 600; border-radius: 4px; cursor: pointer; }
-        .btn-danger { background: #f6465d; color: #fff; }
-        .btn-warning { background: #f0b90b; color: #000; font-size: 11px; padding: 4px 8px; border-radius: 3px; border: none; cursor: pointer; }
-        .btn-secondary { background: #21262d; color: #eaecef; border: 1px solid #2b313a; padding: 6px 12px; font-size: 12px; border-radius: 4px; cursor: pointer; }
-        table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12px; }
-        th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #2b313a; }
-        th { color: #848e9c; }
-        .chart-box { height: 210px; background: #14151a; border-radius: 6px; position: relative; padding: 10px; display: flex; flex-direction: column; justify-content: flex-end; }
+        .metric-title { font-size: 11px; color: #848e9c; margin-bottom: 4px; font-weight: 600; text-transform: uppercase; }
+        .metric-value { font-size: 21px; font-weight: 700; letter-spacing: 0.3px; }
+
+        .positive { color: #0ecb81; text-shadow: 0 0 10px rgba(14, 203, 129, 0.15); }
+        .negative { color: #f6465d; text-shadow: 0 0 10px rgba(246, 70, 93, 0.15); }
+
+        /* Buttons */
+        .btn { background: #f0b90b; color: #07090c; border: none; padding: 8px 16px; font-weight: 700; border-radius: 6px; cursor: pointer; transition: opacity 0.2s; }
+        .btn:hover { opacity: 0.9; }
+        .btn-danger { background: #f6465d; color: #fff; box-shadow: 0 0 10px rgba(246, 70, 93, 0.2); }
+        .btn-warning { background: #f0b90b; color: #07090c; font-size: 11px; padding: 4px 8px; border-radius: 4px; border: none; cursor: pointer; font-weight: 700; }
+        .btn-secondary { background: #161b22; color: #eaecef; border: 1px solid #30363d; padding: 6px 12px; font-size: 12px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .btn-secondary:hover { border-color: #f0b90b; color: #f0b90b; }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 12px; }
+        th, td { text-align: left; padding: 8px; border-bottom: 1px solid #1f2630; }
+        th { color: #848e9c; font-weight: 600; text-transform: uppercase; font-size: 11px; }
+
+        /* Chart Section */
+        .chart-box { height: 220px; background: #0a0d12; border-radius: 6px; border: 1px solid #1f2630; position: relative; padding: 12px; display: flex; flex-direction: column; justify-content: flex-end; }
         svg { width: 100%; height: 140px; }
-        .telemetry-box { font-family: monospace; font-size: 11px; background: #0b0e11; padding: 8px; border-radius: 4px; height: 120px; overflow-y: auto; color: #0ecb81; border: 1px solid #2b313a; }
-        .status-banner { background: #f6465d; color: #fff; padding: 8px; border-radius: 4px; text-align: center; font-weight: bold; font-size: 12px; margin-bottom: 10px; display: none; }
+
+        /* Telemetry & Logs */
+        .telemetry-box { font-family: "Courier New", Courier, monospace; font-size: 11px; background: #07090c; padding: 10px; border-radius: 6px; height: 130px; overflow-y: auto; color: #0ecb81; border: 1px solid #1f2630; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+        
+        /* Status Banner */
+        .status-banner { background: rgba(246, 70, 93, 0.15); border: 1px solid #f6465d; color: #f6465d; padding: 10px; border-radius: 6px; text-align: center; font-weight: bold; font-size: 12px; margin-bottom: 10px; display: none; }
+
+        /* Scrollbar Theme */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #07090c; }
+        ::-webkit-scrollbar-thumb { background: #21262d; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #30363d; }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>GROK PRO - INSTITUTIONAL MULTI-AGENT FUTURES TERMINAL</h1>
-        <div style="display:flex; gap:10px; align-items:center;">
+        <h1>GROK PRO <span style="font-size: 11px; color: #848e9c; font-weight: 400; margin-left: 6px;">| Institutional Multi-Agent Engine</span></h1>
+        <div style="display:flex; gap:12px; align-items:center;">
             <button class="btn-secondary" onclick="window.location.href='/api/export_csv'">📥 EXPORT CSV</button>
-            <div style="font-size: 12px; background: #21262d; padding: 5px 12px; border-radius: 4px; border: 1px solid #f0b90b; color: #f0b90b;" id="modeBadge">TEST MODE ($20 DEPOSIT)</div>
+            <div style="font-size: 12px; background: #161b22; padding: 6px 14px; border-radius: 6px; border: 1px solid rgba(240, 185, 11, 0.3); color: #f0b90b; font-weight: 600;" id="modeBadge">TEST MODE ($20 DEPOSIT)</div>
         </div>
     </header>
 
@@ -50,44 +82,44 @@
         <div class="left-pane">
             <div id="circuitBanner" class="status-banner">
                 🚨 CIRCUIT BREAKER ACTIVATED (30% MAX DRAWDOWN PROTECTION). 
-                <button class="btn-warning" onclick="resetCircuitBreaker()">RESET SYSTEM</button>
+                <button class="btn-warning" onclick="resetCircuitBreaker()" style="margin-left: 8px;">RESET SYSTEM</button>
             </div>
 
             <!-- Performance Metrics -->
             <div class="metrics-grid">
                 <div class="card">
-                    <div class="metric-title">COMPOUNDED EQUITY</div>
+                    <div class="metric-title">Compounded Equity</div>
                     <div class="metric-value" id="accountEquity">$20.00</div>
                     <div style="font-size: 11px; margin-top: 4px;" id="realizedPnlTxt" class="positive">+$0.00 REALIZED PnL</div>
                 </div>
                 <div class="card">
-                    <div class="metric-title">KELLY MARGIN ALLOC</div>
+                    <div class="metric-title">Kelly Margin Alloc</div>
                     <div class="metric-value" style="color: #f0b90b;" id="marginAlloc">$0.00 (25%)</div>
                 </div>
                 <div class="card">
-                    <div class="metric-title">WIN RATE / TRADES</div>
+                    <div class="metric-title">Win Rate / Trades</div>
                     <div class="metric-value" id="winRateTxt" style="color: #0ecb81;">0.0% (0)</div>
                 </div>
                 <div class="card">
-                    <div class="metric-title">PROFIT FACTOR</div>
+                    <div class="metric-title">Profit Factor</div>
                     <div class="metric-value" id="profitFactorTxt" style="color: #f0b90b;">1.00</div>
                 </div>
             </div>
 
-            <!-- Active Position with Manual Close Button -->
+            <!-- Active Position -->
             <div class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <h3>ACTIVE POSITION MANAGEMENT</h3>
-                    <button class="btn btn-danger" onclick="manualClose()">CLOSE POSITION NOW ✖</button>
+                    <h3>Active Position Management</h3>
+                    <button class="btn btn-danger" onclick="manualClose()" style="padding: 6px 12px; font-size: 11px;">CLOSE POSITION NOW ✖</button>
                 </div>
-                <div id="activePositionContainer">Scanning order books for high-conviction setup...</div>
+                <div id="activePositionContainer" style="color: #848e9c; font-size: 13px;">Scanning order books or cooling down...</div>
             </div>
 
             <!-- Chart -->
             <div class="card">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                    <h3 id="chartTitle">ETH/USDT PERPETUAL</h3>
-                    <span id="livePriceHeader" class="positive" style="font-weight: 600;">$3,514.70</span>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center;">
+                    <h3 id="chartTitle" style="margin:0;">ETH/USDT PERPETUAL</h3>
+                    <span id="livePriceHeader" class="positive" style="font-weight: 700; font-size: 14px;">$3,514.70</span>
                 </div>
                 <div class="chart-box">
                     <svg id="candlestickSvg" viewBox="0 0 600 140" preserveAspectRatio="none"></svg>
@@ -96,19 +128,19 @@
 
             <!-- Trade History -->
             <div class="card">
-                <h3>TRADE EXECUTION HISTORY (OPENING & CLOSING LOGS)</h3>
+                <h3>Trade Execution History (Opening & Closing Logs)</h3>
                 <div style="max-height: 160px; overflow-y: auto;">
                     <table>
                         <thead>
                             <tr>
-                                <th>TIME</th>
-                                <th>PAIR</th>
-                                <th>SIDE</th>
-                                <th>LEVERAGE</th>
-                                <th>OPEN PRICE</th>
-                                <th>CLOSE PRICE</th>
-                                <th>PNL</th>
-                                <th>TRIGGER</th>
+                                <th>Time</th>
+                                <th>Pair</th>
+                                <th>Side</th>
+                                <th>Leverage</th>
+                                <th>Open Price</th>
+                                <th>Close Price</th>
+                                <th>PnL</th>
+                                <th>Trigger</th>
                             </tr>
                         </thead>
                         <tbody id="historyTableBody">
@@ -121,20 +153,20 @@
 
         <div class="right-pane">
             <div class="card">
-                <h3>ORDER BOOK DEPTH</h3>
+                <h3>Order Book Depth</h3>
                 <table>
-                    <thead><tr><th>PRICE</th><th>SIZE</th></tr></thead>
+                    <thead><tr><th>Price</th><th>Size</th></tr></thead>
                     <tbody id="orderBookBody"></tbody>
                 </table>
             </div>
 
             <div class="card">
-                <h3>AGENT LEADERBOARD</h3>
+                <h3>Agent Leaderboard</h3>
                 <div id="agentLeaderboard" style="font-size: 12px; margin-top: 6px;"></div>
             </div>
 
             <div class="card" style="flex: 1; display: flex; flex-direction: column;">
-                <h3>TELEMETRY LOGS</h3>
+                <h3>Telemetry Logs</h3>
                 <div class="telemetry-box" id="telemetryLog" style="margin-top: 6px;"></div>
             </div>
         </div>
@@ -163,15 +195,15 @@
                     let tickerHtml = '';
                     for (const [pair, price] of Object.entries(data.market_prices)) {
                         let activeClass = pair === currentSelectedPair ? 'ticker-item active' : 'ticker-item';
-                        tickerHtml += `<div class="${activeClass}" onclick="currentSelectedPair='${pair}'"><strong>${pair}</strong> <span class="positive">$${price.toFixed(2)}</span></div>`;
+                        tickerHtml += `<div class="${activeClass}" onclick="currentSelectedPair='${pair}'"><strong>${pair}</strong> <span class="positive" style="margin-left:6px;">$${price.toFixed(2)}</span></div>`;
                     }
                     document.getElementById('tickerBar').innerHTML = tickerHtml;
 
                     let lbHtml = '';
                     for (const [agentName, info] of Object.entries(data.agent_performance)) {
                         let pnlClass = info.pnl >= 0 ? 'positive' : 'negative';
-                        lbHtml += `<div style="display:flex; justify-content:space-between; margin-bottom:4px; border-bottom:1px solid #2b313a; padding-bottom:3px;">
-                            <span>${agentName}</span>
+                        lbHtml += `<div style="display:flex; justify-content:space-between; margin-bottom:6px; border-bottom:1px solid #1f2630; padding-bottom:4px;">
+                            <span style="color: #c9d1d9;">${agentName}</span>
                             <span class="${pnlClass}">${info.trades} trd | ${info.pnl >= 0 ? '+' : ''}$${info.pnl.toFixed(2)}</span>
                         </div>`;
                     }
@@ -184,9 +216,9 @@
                         let scaleMsg = pos.scaled_out ? ' <span style="color:#f0b90b;">[50% Scaled Out]</span>' : '';
                         posContainer.innerHTML = `
                             <table style="margin-bottom:0;">
-                                <tr><th>AGENT</th><th>PAIR</th><th>SIDE</th><th>LEVERAGE</th><th>ENTRY</th><th>CURRENT</th><th>MARGIN</th><th>UNREALIZED PnL</th></tr>
+                                <tr><th>Agent</th><th>Pair</th><th>Side</th><th>Leverage</th><th>Entry</th><th>Current</th><th>Margin</th><th>Unrealized PnL</th></tr>
                                 <tr>
-                                    <td><span style="color:#f0b90b;">[${pos.agent}]</span></td>
+                                    <td><span style="color:#f0b90b; font-weight:600;">[${pos.agent}]</span></td>
                                     <td><strong>${pos.pair}</strong></td>
                                     <td class="${pos.side === 'LONG' ? 'positive' : 'negative'}"><strong>${pos.side}</strong></td>
                                     <td>${pos.leverage}x</td>
@@ -199,7 +231,7 @@
                         `;
                         document.getElementById('marginAlloc').innerText = `$${pos.margin.toFixed(2)} (25%)`;
                     } else {
-                        posContainer.innerHTML = `<div style="padding: 10px; color: #848e9c; text-align: center;">Scanning order books or cooling down...</div>`;
+                        posContainer.innerHTML = `<div style="padding: 6px; color: #848e9c; text-align: center;">Scanning order books or cooling down...</div>`;
                         document.getElementById('marginAlloc').innerText = `$0.00 (25%)`;
                     }
 
@@ -211,14 +243,14 @@
                             let pnlClass = h.raw_pnl >= 0 ? 'positive' : 'negative';
                             historyHtml += `
                                 <tr>
-                                    <td>${h.time}</td>
-                                    <td>${h.pair}</td>
+                                    <td style="color: #848e9c;">${h.time}</td>
+                                    <td><strong>${h.pair}</strong></td>
                                     <td class="${h.side === 'LONG' ? 'positive' : 'negative'}">${h.side}</td>
                                     <td>${h.leverage}</td>
                                     <td>${h.open_price}</td>
                                     <td>${h.close_price}</td>
                                     <td class="${pnlClass}"><strong>${h.pnl}</strong></td>
-                                    <td><span style="font-size:10px; background:#21262d; padding:2px 6px; border-radius:3px;">${h.trigger}</span></td>
+                                    <td><span style="font-size:10px; background:#161b22; border: 1px solid #30363d; padding:2px 6px; border-radius:4px; color:#c9d1d9;">${h.trigger}</span></td>
                                 </tr>
                             `;
                         });
@@ -247,15 +279,15 @@
                     let svgContent = '';
                     for(let i=0; i<18; i++) {
                         let x = i * 33 + 12;
-                        let isGreen = Math.random() > 0.45;
+                        let isGreen = Math.random() > 0.42;
                         let color = isGreen ? '#0ecb81' : '#f6465d';
                         let openY = 70 + (Math.random() * 30 - 15);
-                        let closeY = openY + (isGreen ? -15 : 15);
+                        let closeY = openY + (isGreen ? -16 : 16);
                         let highY = Math.min(openY, closeY) - 10;
                         let lowY = Math.max(openY, closeY) + 10;
 
-                        svgContent += `<line x1="${x}" y1="${highY}" x2="${x}" y2="${lowY}" stroke="${color}" stroke-width="1.5" />`;
-                        svgContent += `<rect x="${x-5}" y="${Math.min(openY, closeY)}" width="10" height="${Math.abs(closeY - openY)}" fill="${color}" rx="1" />`;
+                        svgContent += `<line x1="${x}" y1="${highY}" x2="${x}" y2="${lowY}" stroke="${color}" stroke-width="1.5" opacity="0.8" />`;
+                        svgContent += `<rect x="${x-5}" y="${Math.min(openY, closeY)}" width="10" height="${Math.abs(closeY - openY)}" fill="${color}" rx="1.5" />`;
                     }
                     document.getElementById('candlestickSvg').innerHTML = svgContent;
                 });
