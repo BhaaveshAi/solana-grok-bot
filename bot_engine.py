@@ -1,103 +1,143 @@
-import time
-import threading
 import os
-import ccxt
-from flask import Flask, jsonify, render_template
+import time
+import random
+import threading
+from flask import Flask, render_template, jsonify, request
 
 app = Flask(__name__)
 
-# --- LIVE EXCHANGE CONFIGURATION ---
-# Set to True when you are ready to execute real-money trades on Binance Futures.
-LIVE_MODE = False  
-INITIAL_EQUITY = 100.00
+# Configuration & State
+LIVE_MODE = False  # Set to True when API keys are configured in Render
+INITIAL_EQUITY = 20.0  # Configurable starting capital (e.g., $20 test deposit)
 
-# Retrieve API credentials from environment variables for security
-EXCHANGE_API_KEY = os.getenv("EXCHANGE_API_KEY", "")
-EXCHANGE_SECRET_KEY = os.getenv("EXCHANGE_SECRET_KEY", "")
-EXCHANGE_PASSWORD = os.getenv("EXCHANGE_PASSWORD", "")  # Required for some derivatives APIs
-
-# Initialize CCXT Binance Futures connector if credentials exist
-exchange = None
-if LIVE_MODE and EXCHANGE_API_KEY and EXCHANGE_SECRET_KEY:
-    try:
-        exchange = ccxt.binance({
-            'apiKey': EXCHANGE_API_KEY,
-            'secret': EXCHANGE_SECRET_KEY,
-            'enableRateLimit': True,
-            'options': {
-                'defaultType': 'future'  # Connects directly to Binance USDT-M Futures
-            }
-        })
-        exchange.load_markets()
-        print("=== SUCCESS: Connected to Live Binance Futures Exchange API ===")
-    except Exception as e:
-        print(f"=== ERROR: Failed to connect to live exchange: {e} ===")
-        LIVE_MODE = False
-
-# Master Platform State
 platform_state = {
+    "balance": INITIAL_EQUITY,
     "equity": INITIAL_EQUITY,
-    "starting_equity": INITIAL_EQUITY,
-    "live_mode": LIVE_MODE,
-    "active_position": {
-        "symbol": "SOL/USDT",
-        "type": "LONG",
-        "leverage": 10,
-        "entry": 182.50,
-        "current": 184.50,
-        "tp_price": 198.00,
-        "unrealized_pnl": 14.20,
-        "pnl_pct": 14.2,
-        "margin": 25.0
-    },
-    "big_closes": [
-        {"symbol": "XLM", "side": "SHORT", "lev": "10x", "profit": 30},
-        {"symbol": "ETH", "side": "LONG", "lev": "16x", "profit": 63},
-        {"symbol": "BCH", "side": "LONG", "lev": "16x", "profit": 153},
-        {"symbol": "AVAX", "side": "LONG", "lev": "11x", "profit": 312},
-        {"symbol": "BNB", "side": "SHORT", "lev": "23x", "profit": 891}
-    ],
-    "agent_telemetry": [
-        "[Scout Agent]: Scanning live order books across Binance perpetual markets...",
-        "[Risk Agent]: Kelly criterion position cap locked at 25% margin.",
-        "[Execution Engine]: TWAP routing active."
-    ]
+    "realized_pnl": 0.0,
+    "active_position": None,
+    "trades_history": [],
+    "telemetry": [],
+    "market_prices": {
+        "SOLUSDT": 161.13,
+        "BTCUSDT": 62917.54,
+        "ETHUSDT": 3514.70, # Scaled realistically
+        "AVAXUSDT": 24.48,
+        "BNBUSDT": 652.65
+    }
 }
 
-def fetch_live_market_data():
-    """Fetches real-time ticker data via CCXT or fallback public API endpoints."""
-    try:
-        if exchange and LIVE_MODE:
-            ticker = exchange.fetch_ticker('SOL/USDT')
-            return ticker['last']
-        else:
-            import requests
-            res = requests.get("https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd", timeout=3).json()
-            return res.get("solana", {}).get("usd", 184.50)
-    except Exception:
-        return 184.50
+agents_registry = [
+    {"name": "SOL Volatility Scout", "pair": "SOLUSDT", "bias": "LONG"},
+    {"name": "BTC Macro Quant Agent", "pair": "BTCUSDT", "bias": "LONG"},
+    {"name": "ETH Derivatives Bot", "pair": "ETHUSDT", "bias": "SHORT"},
+    {"name": "AVAX Breakout Specialist", "pair": "AVAXUSDT", "bias": "LONG"},
+    {"name": "BNB Liquidity Agent", "pair": "BNBUSDT", "bias": "SHORT"}
+]
 
-def live_trading_execution_loop():
-    """Background thread handling autonomous trade execution and real exchange order routing."""
-    print(f"=== Autonomous Trading Engine Started | Mode: {'LIVE MAINNET' if LIVE_MODE else 'PAPER RUN'} ===")
-    
+def background_trading_engine():
     while True:
         try:
-            current_price = fetch_live_market_data()
-            platform_state["active_position"]["current"] = current_price
-
-            if LIVE_MODE and exchange:
-                # --- LIVE ORDER PLACEMENT CODE (CCXT) ---
-                # order = exchange.create_order(symbol='SOL/USDT', type='market', side='buy', amount=0.5)
-                pass
+            time.sleep(3.0)
             
-            time.sleep(3)
-        except Exception as e:
-            print(f"Execution loop error: {e}")
-            time.sleep(5)
+            # Simulate natural price fluctuations
+            for pair in platform_state["market_prices"]:
+                fluctuation = random.uniform(-0.003, 0.003)
+                platform_state["market_prices"][pair] = round(platform_state["market_prices"][pair] * (1 + fluctuation), 2)
 
-# Start background engine thread
-threading.Thread(target=live_trading_execution_loop, daemon=True).start()
+            pos = platform_state["active_position"]
+            
+            if pos:
+                # Update active position PnL based on current price
+                current_price = platform_state["market_prices"][pos["pair"]]
+                entry = pos["entry"]
+                leverage = pos["leverage"]
+                margin = pos["margin"]
+                
+                if pos["side"] == "LONG":
+                    pnl_pct = (current_price - entry) / entry
+                else:
+                    pnl_pct = (entry - current_price) / entry
+                    
+                unrealized = margin * leverage * pnl_pct
+                pos["current_price"] = current_price
+                pos["unrealized_pnl"] = round(unrealized, 2)
+                pos["pnl_percentage"] = round(pnl_pct * 100 * leverage, 2)
+                
+                # Check take profit (+15%) or stop loss (-10%)
+                if pnl_pct * leverage >= 0.15 or pnl_pct * leverage <= -0.10:
+                    trigger_type = "AUTO_TAKE_PROFIT" if pnl_pct >= 0 else "AUTO_STOP_LOSS"
+                    close_trade(trigger_type)
+            else:
+                # Select a random agent to open a realistic trade based on current equity
+                agent = random.choice(agents_registry)
+                pair = agent["pair"]
+                price = platform_state["market_prices"][pair]
+                side = agent["bias"]
+                leverage = random.choice([5, 10, 16, 20])
+                
+                # Allocate 25% of current equity as margin (minimum $2 for small accounts)
+                available_balance = platform_state["equity"]
+                if available_balance < 5.0:
+                    # Reset if blown account in test mode
+                    platform_state["balance"] = INITIAL_EQUITY
+                    platform_state["equity"] = INITIAL_EQUITY
+                    available_balance = INITIAL_EQUITY
+
+                margin = round(available_balance * 0.25, 2)
+                if margin < 1.0: margin = 1.0
+
+                platform_state["active_position"] = {
+                    "agent": agent["name"],
+                    "pair": pair,
+                    "side": side,
+                    "leverage": leverage,
+                    "entry": price,
+                    "current_price": price,
+                    "margin": margin,
+                    "unrealized_pnl": 0.0,
+                    "pnl_percentage": 0.0,
+                    "time": time.strftime("%I:%M:%S %p")
+                }
+                
+                log_msg = f"[{agent['name']}]: EXECUTED {side} ON {pair} {leverage}x @ ${price}"
+                platform_state["telemetry"].insert(0, log_msg)
+                if len(platform_state["telemetry"]) > 30:
+                    platform_state["telemetry"].pop()
+
+        except Exception as e:
+            print(f"Engine Error: {e}")
+
+def close_trade(trigger_method):
+    pos = platform_state["active_position"]
+    if not pos:
+        return
+        
+    pnl = pos["unrealized_pnl"]
+    # Apply realistic 0.05% exchange taker fee
+    fee = (pos["margin"] * pos["leverage"]) * 0.0005
+    final_pnl = round(pnl - fee, 2)
+    
+    platform_state["balance"] += final_pnl
+    platform_state["equity"] = round(platform_state["balance"] + final_pnl, 2)
+    platform_state["realized_pnl"] = round(platform_state["realized_pnl"] + final_pnl, 2)
+    
+    history_record = {
+        "time": time.strftime("%I:%M:%S %p"),
+        "pair": pos["pair"],
+        "side": pos["side"],
+        "leverage": f"{pos['leverage']}x",
+        "open_price": f"${pos['entry']}",
+        "close_price": f"${pos['current_price']}",
+        "pnl": f"${final_pnl}" if final_pnl < 0 else f"+${final_pnl}",
+        "raw_pnl": final_pnl,
+        "trigger": trigger_method
+    }
+    
+    platform_state["trades_history"].insert(0, history_record)
+    platform_state["active_position"] = None
+    
+    log_msg = f"[{trigger_method}]: Closed {pos['pair']} @ ${pos['current_price']} (${final_pnl})"
+    platform_state["telemetry"].insert(0, log_msg)
 
 @app.route('/')
 def index():
@@ -107,5 +147,14 @@ def index():
 def get_state():
     return jsonify(platform_state)
 
+@app.route('/api/close_position', methods=['POST'])
+def api_close_position():
+    if platform_state["active_position"]:
+        close_trade("MANUAL_CLOSE")
+        return jsonify({"status": "success", "message": "Position closed manually."})
+    return jsonify({"status": "error", "message": "No active position."})
+
 if __name__ == '__main__':
+    t = threading.Thread(target=background_trading_engine, daemon=True)
+    t.start()
     app.run(host='0.0.0.0', port=5000)

@@ -3,679 +3,242 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grok Bot - Binance Futures Pro Terminal</title>
+    <title>Grok Pro - Binance Futures Terminal</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            background-color: #0b0e11;
-            color: #d1d4dc;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
-            padding: 10px;
-            font-size: 12px;
-            user-select: none;
-        }
-        .top-nav {
-            display: flex; justify-content: space-between; align-items: center;
-            background-color: #151a21; border: 1px solid #21262d; border-radius: 8px;
-            padding: 10px 14px; margin-bottom: 8px;
-        }
-        .brand { display: flex; align-items: center; gap: 8px; font-size: 1.1rem; font-weight: bold; color: #f0b90b; }
-        .mode-badge {
-            background: rgba(0, 230, 118, 0.15); color: #00e676;
-            border: 1px solid rgba(0, 230, 118, 0.3); padding: 4px 8px;
-            border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer;
-        }
-        .ticker-bar { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 8px; padding-bottom: 4px; }
-        .ticker-card {
-            background: #151a21; border: 1px solid #21262d; border-radius: 6px;
-            padding: 6px 12px; display: flex; align-items: center; gap: 8px;
-            cursor: pointer; white-space: nowrap;
-        }
-        .ticker-card.active { border-color: #f0b90b; background: #1e242d; }
-        .ticker-name { font-weight: bold; color: #fff; }
-        .ticker-price { font-weight: bold; color: #00e676; }
-        .grid-container { display: grid; grid-template-columns: 2.2fr 1fr; gap: 8px; }
-        @media (max-width: 900px) { .grid-container { grid-template-columns: 1fr; } }
-        .card { background-color: #151a21; border: 1px solid #21262d; border-radius: 8px; padding: 12px; margin-bottom: 8px; }
-        .row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .green { color: #00e676; }
-        .red { color: #ff5252; }
-        .gold { color: #f0b90b; }
-        .bold { font-weight: bold; }
-        .text-white { color: #ffffff; }
-        .btn { padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; border: none; font-size: 11px; }
-        .btn-green { background: #00e676; color: #000; }
-        .btn-red { background: #ff5252; color: #fff; }
-        .btn-gold { background: #f0b90b; color: #000; }
-        .btn-outline { background: transparent; border: 1px solid #21262d; color: #8b949e; }
-        .lev-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; margin: 8px 0; }
-        .chart-container { width: 100%; height: 200px; background: #0b0e11; border-radius: 6px; border: 1px solid #21262d; margin: 8px 0; padding: 8px; position: relative; }
-        svg { width: 100%; height: 100%; }
-        .ob-table { width: 100%; font-family: monospace; font-size: 11px; margin-top: 4px; border-collapse: collapse; }
-        .ob-table th, .ob-table td { padding: 4px 6px; }
-        .vault-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 8px; }
-        .vault-box { background: #0b0e11; border: 1px solid rgba(0, 230, 118, 0.3); border-radius: 6px; padding: 6px; text-align: center; }
-        .log-box { background: #0b0e11; border: 1px solid #21262d; border-radius: 6px; padding: 8px; height: 120px; overflow-y: auto; font-family: monospace; font-size: 10px; }
-        .log-entry { margin-bottom: 4px; border-bottom: 1px solid #161b22; padding-bottom: 2px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background-color: #0b0e11; color: #eaecef; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        header { background: #181a20; border-bottom: 1px solid #2b313a; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
+        h1 { font-size: 18px; color: #f0b90b; font-weight: 700; letter-spacing: 0.5px; }
+        .ticker-bar { display: flex; gap: 15px; background: #181a20; padding: 10px 20px; border-bottom: 1px solid #2b313a; overflow-x: auto; }
+        .ticker-item { background: #21262d; padding: 6px 12px; border-radius: 4px; font-size: 13px; cursor: pointer; border: 1px solid transparent; }
+        .ticker-item.active { border-color: #f0b90b; }
+        .main-layout { display: grid; grid-template-columns: 3fr 1fr; flex: 1; overflow: hidden; }
+        .left-pane { display: flex; flex-direction: column; padding: 15px; overflow-y: auto; gap: 15px; }
+        .right-pane { background: #181a20; border-left: 1px solid #2b313a; display: flex; flex-direction: column; padding: 15px; gap: 15px; overflow-y: auto; }
+        .card { background: #181a20; border: 1px solid #2b313a; border-radius: 6px; padding: 15px; }
+        .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .metric-title { font-size: 12px; color: #848e9c; margin-bottom: 5px; }
+        .metric-value { font-size: 22px; font-weight: 600; }
+        .positive { color: #0ecb81; }
+        .negative { color: #f6465d; }
+        .btn { background: #f0b90b; color: #000; border: none; padding: 8px 16px; font-weight: 600; border-radius: 4px; cursor: pointer; }
+        .btn-danger { background: #f6465d; color: #fff; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+        th, td { text-align: left; padding: 8px; border-bottom: 1px solid #2b313a; }
+        th { color: #848e9c; }
+        .chart-box { height: 260px; background: #14151a; border-radius: 6px; position: relative; padding: 10px; display: flex; flex-direction: column; justify-content: flex-end; }
+        svg { width: 100%; height: 180px; }
+        .telemetry-box { font-family: monospace; font-size: 11px; background: #0b0e11; padding: 8px; border-radius: 4px; height: 160px; overflow-y: auto; color: #0ecb81; border: 1px solid #2b313a; }
     </style>
 </head>
 <body>
 
-    <!-- TOP NAV -->
-    <div class="top-nav">
-        <div class="brand">
-            <span>🐼</span> GROK BOT AUTOMATED TRADING PLATFORM
-        </div>
-        <div class="mode-badge" id="mode-btn" onclick="toggleMode()">PAPER RUN ($100.00)</div>
-    </div>
+    <header>
+        <h1>GROK PRO - AUTONOMOUS FUTURES (TEST MODE: $<span id="headerEquity">20.00</span>)</h1>
+        <div style="font-size: 13px; background: #21262d; padding: 5px 10px; border-radius: 4px;" id="modeBadge">PAPER RUN ($20.00 DEPOSIT)</div>
+    </header>
 
-    <!-- TICKER BAR -->
-    <div class="ticker-bar">
-        <div class="ticker-card active" id="card-SOLUSDT" onclick="switchPair('SOLUSDT')">
-            <span class="ticker-name">SOL/USDT</span>
-            <span class="ticker-price" id="t-price-SOLUSDT">$184.50</span>
-        </div>
-        <div class="ticker-card" id="card-BTCUSDT" onclick="switchPair('BTCUSDT')">
-            <span class="ticker-name">BTC/USDT</span>
-            <span class="ticker-price" id="t-price-BTCUSDT">$91,420.00</span>
-        </div>
-        <div class="ticker-card" id="card-ETHUSDT" onclick="switchPair('ETHUSDT')">
-            <span class="ticker-name">ETH/USDT</span>
-            <span class="ticker-price" id="t-price-ETHUSDT">$3,340.00</span>
-        </div>
-        <div class="ticker-card" id="card-AVAXUSDT" onclick="switchPair('AVAXUSDT')">
-            <span class="ticker-name">AVAX/USDT</span>
-            <span class="ticker-price" id="t-price-AVAXUSDT">$9.74</span>
-        </div>
-        <div class="ticker-card" id="card-BNBUSDT" onclick="switchPair('BNBUSDT')">
-            <span class="ticker-name">BNB/USDT</span>
-            <span class="ticker-price" id="t-price-BNBUSDT">$624.80</span>
-        </div>
-    </div>
+    <div class="ticker-bar" id="tickerBar"></div>
 
-    <div class="grid-container">
-        <!-- LEFT COLUMN -->
-        <div>
-            <!-- ACCOUNT EQUITY -->
-            <div class="card">
-                <div class="row">
-                    <div>
-                        <div style="color: #8b949e; font-size: 10px;">TOTAL ACCOUNT EQUITY</div>
-                        <div style="font-size: 1.8rem; font-weight: bold; color: #fff;" id="equity-val">$100.00</div>
-                        <div class="green bold" id="realized-gain">+$0.00 REALIZED PROFIT</div>
-                    </div>
-                    <div style="text-align: right;">
-                        <div style="color: #8b949e; font-size: 10px;">OPTIMAL MARGIN ALLOCATION</div>
-                        <div class="gold bold" style="font-size: 1.2rem;">$25.00 (25%)</div>
-                        <div style="color: #8b949e; font-size: 10px;">KELLY CRITERION CAP</div>
-                    </div>
+    <div class="main-layout">
+        <div class="left-pane">
+            <div class="metrics-grid">
+                <div class="card">
+                    <div class="metric-title">TOTAL ACCOUNT EQUITY</div>
+                    <div class="metric-value" id="accountEquity">$20.00</div>
+                    <div style="font-size: 12px; margin-top: 5px;" id="realizedPnlTxt" class="positive">+$0.00 REALIZED PnL</div>
+                </div>
+                <div class="card">
+                    <div class="metric-title">ACTIVE MARGIN ALLOCATION</div>
+                    <div class="metric-value" style="color: #f0b90b;" id="marginAlloc">$0.00 (25%)</div>
+                </div>
+                <div class="card">
+                    <div class="metric-title">STRATEGY MODE</div>
+                    <div class="metric-value" style="font-size: 16px; margin-top: 5px;">100% Fully Autonomous</div>
                 </div>
             </div>
 
-            <!-- ACTIVE POSITION & MANUAL CLOSE CONTROL -->
-            <div class="card" id="active-position-card">
-                <div class="row">
-                    <span class="bold" style="color: #fff;">ACTIVE POSITION MANAGEMENT</span>
-                    <button class="btn btn-red" onclick="closeActivePosition('MANUAL_CLOSE')">CLOSE POSITION NOW ✖</button>
+            <!-- Active Position -->
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h3>ACTIVE POSITION MANAGEMENT</h3>
+                    <button class="btn btn-danger" onclick="manualClose()">CLOSE POSITION NOW ✖</button>
                 </div>
-                <div style="overflow-x: auto;">
-                    <table class="ob-table">
-                        <thead>
-                            <tr style="color: #8b949e; text-align: left;">
-                                <th>EXECUTING AGENT</th>
-                                <th>PAIR</th>
-                                <th>SIDE</th>
-                                <th>LEVERAGE</th>
-                                <th>OPEN (ENTRY)</th>
-                                <th>CURRENT PRICE</th>
-                                <th>MARGIN</th>
-                                <th>UNREALIZED PnL</th>
-                                <th style="text-align: right;">ACTION</th>
-                            </tr>
-                        </thead>
-                        <tbody id="active-pos-table-body">
-                            <!-- Populated dynamically -->
-                        </tbody>
-                    </table>
+                <div id="activePositionContainer">No active position running.</div>
+            </div>
+
+            <!-- Candlestick Chart Simulation -->
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <h3 id="chartTitle">ETH/USDT PERPETUAL</h3>
+                    <span id="livePriceHeader" class="positive">$3,514.70</span>
+                </div>
+                <div class="chart-box">
+                    <svg id="candlestickSvg" viewBox="0 0 600 180" preserveAspectRatio="none">
+                        <!-- Dynamic SVG candlesticks injected via JS -->
+                    </svg>
                 </div>
             </div>
 
-            <!-- OPEN & CLOSED TRADES HISTORY LOG -->
+            <!-- Trade History -->
             <div class="card">
-                <div class="row">
-                    <span class="bold" style="color: #fff;">TRADE EXECUTION HISTORY (OPENING & CLOSING LOGS)</span>
-                    <span class="green bold" id="total-trades-count">0 TRADES LOGGED</span>
-                </div>
-                <div style="max-height: 160px; overflow-y: auto;">
-                    <table class="ob-table" style="font-size: 10px;">
+                <h3>TRADE EXECUTION HISTORY (OPENING & CLOSING LOGS)</h3>
+                <div style="max-height: 200px; overflow-y: auto;">
+                    <table>
                         <thead>
-                            <tr style="color: #8b949e; text-align: left;">
+                            <tr>
                                 <th>TIME</th>
                                 <th>PAIR</th>
                                 <th>SIDE</th>
                                 <th>LEVERAGE</th>
                                 <th>OPEN PRICE</th>
                                 <th>CLOSE PRICE</th>
-                                <th>REALIZED PnL</th>
-                                <th>TRIGGER METHOD</th>
+                                <th>PNL</th>
+                                <th>TRIGGER</th>
                             </tr>
                         </thead>
-                        <tbody id="trade-history-tbody">
-                            <!-- Populated dynamically -->
+                        <tbody id="historyTableBody">
+                            <tr><td colspan="8" style="text-align: center; color: #848e9c;">Waiting for bot execution...</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
-
-            <!-- CHART CARD & LEVERAGE SELECTOR -->
-            <div class="card">
-                <div class="row">
-                    <div>
-                        <span class="bold" style="font-size: 1.1rem; color: #fff;" id="selected-pair-title">SOL/USDT PERPETUAL</span>
-                        <span class="gold bold" id="active-lev-label" style="margin-left: 6px;">10x</span>
-                    </div>
-                    <div style="text-align: right;">
-                        <span class="green bold" style="font-size: 1.2rem;" id="active-pnl-val">+$0.00</span>
-                        <span class="green bold" id="active-pnl-pct">(+0.0%)</span>
-                    </div>
-                </div>
-
-                <div class="row" style="font-size: 11px; color: #8b949e;">
-                    <span>ENTRY: <strong id="entry-price-display" class="gold">$182.50</strong></span>
-                    <span>TARGET TP: <strong id="tp-price-display" class="green">$198.00</strong></span>
-                    <span>MARKET PRICE: <strong id="mark-price-display" class="green">$184.50</strong></span>
-                </div>
-
-                <div class="chart-container">
-                    <svg viewBox="0 0 500 180" id="svg-chart">
-                        <line x1="0" y1="30" x2="500" y2="30" stroke="#1f242d" stroke-dasharray="3" />
-                        <line x1="0" y1="75" x2="500" y2="75" stroke="#1f242d" stroke-dasharray="3" />
-                        <line x1="0" y1="120" x2="500" y2="120" stroke="#1f242d" stroke-dasharray="3" />
-
-                        <g id="candlestick-group"></g>
-
-                        <line x1="0" y1="85" x2="500" y2="85" stroke="#00e676" stroke-width="1.2" stroke-dasharray="4" />
-                        <text x="8" y="80" fill="#00e676" font-size="9">TP TARGET (+20%)</text>
-                    </svg>
-                </div>
-
-                <div style="margin-top: 10px;">
-                    <div style="color: #8b949e; font-size: 10px; font-weight: bold;">SELECT LEVERAGE MULTIPLIER:</div>
-                    <div class="lev-grid">
-                        <button class="btn btn-outline" onclick="setLeverage(1)">1x</button>
-                        <button class="btn btn-outline" onclick="setLeverage(2)">2x</button>
-                        <button class="btn btn-outline" onclick="setLeverage(3)">3x</button>
-                        <button class="btn btn-outline" onclick="setLeverage(5)">5x</button>
-                        <button class="btn btn-gold" id="lev-10-btn" onclick="setLeverage(10)">10x</button>
-                        <button class="btn btn-outline" onclick="setLeverage(25)">25x</button>
-                        <button class="btn btn-outline" onclick="setLeverage(50)">50x</button>
-                        <button class="btn btn-outline" onclick="setLeverage(100)">100x</button>
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;">
-                        <button class="btn btn-green" onclick="executeTrade('LONG')">AUTOMATED BUY / LONG</button>
-                        <button class="btn btn-red" onclick="executeTrade('SHORT')">AUTOMATED SELL / SHORT</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- BIG CLOSES VAULT CARD -->
-            <div class="card">
-                <div class="row">
-                    <span class="bold" style="color: #fff;">BIG CLOSES PROFIT VAULT (1/5)</span>
-                    <span class="green bold">+ $1,649 TOTAL PROFIT</span>
-                </div>
-                <div class="vault-grid">
-                    <div class="vault-box"><div class="bold text-white">XLM</div><div style="font-size:9px; color:#8b949e;">10x SHORT</div><div class="green bold">+$30</div></div>
-                    <div class="vault-box"><div class="bold text-white">ETH</div><div style="font-size:9px; color:#8b949e;">16x LONG</div><div class="green bold">+$63</div></div>
-                    <div class="vault-box"><div class="bold text-white">BCH</div><div style="font-size:9px; color:#8b949e;">16x LONG</div><div class="green bold">+$153</div></div>
-                    <div class="vault-box"><div class="bold text-white">AVAX</div><div style="font-size:9px; color:#8b949e;">11x LONG</div><div class="green bold">+$312</div></div>
-                    <div class="vault-box"><div class="bold text-white">BNB</div><div style="font-size:9px; color:#8b949e;">23x SHORT</div><div class="green bold">+$891</div></div>
-                </div>
-            </div>
         </div>
 
-        <!-- RIGHT COLUMN -->
-        <div>
-            <!-- ORDER BOOK CARD -->
+        <div class="right-pane">
             <div class="card">
-                <div class="row">
-                    <span class="bold" style="color: #fff;">ORDER BOOK DEPTH</span>
-                    <span style="color: #8b949e; font-size: 10px;">SPREAD: 0.01%</span>
-                </div>
-                <table class="ob-table">
-                    <thead>
-                        <tr style="color: #8b949e; text-align: left;">
-                            <th>PRICE</th>
-                            <th style="text-align: right;">SIZE</th>
-                        </tr>
-                    </thead>
-                    <tbody id="ob-asks"></tbody>
-                </table>
-                <hr style="border-color: #21262d; margin: 4px 0;">
-                <table class="ob-table">
-                    <tbody id="ob-bids"></tbody>
+                <h3>ORDER BOOK DEPTH</h3>
+                <table>
+                    <thead><tr><th>PRICE</th><th>SIZE</th></tr></thead>
+                    <tbody id="orderBookBody"></tbody>
                 </table>
             </div>
 
-            <!-- AUTOMATED AGENT TELEMETRY -->
-            <div class="card">
-                <div class="row">
-                    <span class="bold" style="color: #fff;">100% KNOWLEDGE MULTI-AGENT TELEMETRY</span>
-                    <span class="green bold">100% IQ ACTIVE</span>
-                </div>
-                <div class="log-box" id="agent-log-container">
-                    <div class="log-entry"><strong style="color:#f0b90b;">[Quant Brain AI]:</strong> Order book depth & volatility metrics calculated.</div>
-                    <div class="log-entry"><strong style="color:#00e676;">[Risk Agent]:</strong> Kelly Criterion position allocation locked at 25% max collateral.</div>
-                    <div class="log-entry"><strong style="color:#1e88e5;">[Technical AI]:</strong> RSI(14) oversold bounce + EMA7 crossover detected.</div>
-                </div>
-            </div>
-
-            <!-- TRADING NEWS FEED -->
-            <div class="card">
-                <div class="row">
-                    <span class="bold" style="color: #fff;">LIVE TRADING NEWS</span>
-                    <span class="green bold">FEED ACTIVE</span>
-                </div>
-                <div id="news-container">
-                    <div style="border-bottom: 1px solid #21262d; padding-bottom: 6px; margin-bottom: 6px;">
-                        <div style="font-size: 9px; color: #8b949e;">JUST NOW · <span class="green bold">BULLISH 92%</span></div>
-                        <div style="color: #fff; font-size: 11px; margin-top: 2px;">Solana DEX 24h volume surges past $2.8B amid high perpetual open interest.</div>
-                    </div>
-                    <div style="border-bottom: 1px solid #21262d; padding-bottom: 6px; margin-bottom: 6px;">
-                        <div style="font-size: 9px; color: #8b949e;">5m AGO · <span class="green bold">BULLISH 84%</span></div>
-                        <div style="color: #fff; font-size: 11px; margin-top: 2px;">Federal Reserve liquidity guidance triggers aggressive altcoin short squeezes.</div>
-                    </div>
-                </div>
+            <div class="card" style="flex: 1; display: flex; flex-direction: column;">
+                <h3>100% KNOWLEDGE MULTI-AGENT TELEMETRY</h3>
+                <div class="telemetry-box" id="telemetryLog" style="margin-top: 10px; flex: 1;"></div>
             </div>
         </div>
     </div>
 
-    <!-- JAVASCRIPT ENGINE -->
     <script>
-        let currentPair = 'SOLUSDT';
-        let currentLeverage = 10;
-        let equity = 100.00;
-        let startingEquity = 100.00;
-        let isPaperMode = true;
-        let activePosition = null;
-        let autoBotActive = true;
-        let tradeHistory = [];
+        let currentSelectedPair = "ETHUSDT";
 
-        const prices = {
-            'SOLUSDT': 184.50,
-            'BTCUSDT': 91420.00,
-            'ETHUSDT': 3340.00,
-            'AVAXUSDT': 9.74,
-            'BNBUSDT': 624.80
-        };
+        function updatePlatformState() {
+            fetch('/api/state')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('accountEquity').innerText = `$${data.equity.toFixed(2)}`;
+                    document.getElementById('headerEquity').innerText = data.equity.toFixed(2);
+                    document.getElementById('realizedPnlTxt').innerText = `${data.realized_pnl >= 0 ? '+' : ''}$${data.realized_pnl.toFixed(2)} REALIZED PnL`;
+                    document.getElementById('realizedPnlTxt').className = data.realized_pnl >= 0 ? 'positive' : 'negative';
 
-        let candles = [];
+                    // Update Ticker Bar
+                    let tickerHtml = '';
+                    for (const [pair, price] of Object.entries(data.market_prices)) {
+                        let activeClass = pair === currentSelectedPair ? 'ticker-item active' : 'ticker-item';
+                        tickerHtml += `<div class="${activeClass}" onclick="currentSelectedPair='${pair}'"><strong>${pair}</strong> <span class="positive">$${price.toFixed(2)}</span></div>`;
+                    }
+                    document.getElementById('tickerBar').innerHTML = tickerHtml;
 
-        window.onload = function() {
-            generateInitialCandles();
-            startTickerStream();
-            renderOrderBook();
-            renderActivePositionRow();
-            startAutonomousAgentEngine();
-        };
+                    // Update Active Position
+                    const pos = data.active_position;
+                    const posContainer = document.getElementById('activePositionContainer');
+                    if (pos) {
+                        let pnlColor = pos.unrealized_pnl >= 0 ? 'positive' : 'negative';
+                        posContainer.innerHTML = `
+                            <table style="margin-bottom:0;">
+                                <tr><th>AGENT</th><th>PAIR</th><th>SIDE</th><th>LEVERAGE</th><th>ENTRY</th><th>CURRENT</th><th>MARGIN</th><th>UNREALIZED PnL</th></tr>
+                                <tr>
+                                    <td><span style="color:#f0b90b;">[${pos.agent}]</span></td>
+                                    <td><strong>${pos.pair}</strong></td>
+                                    <td class="${pos.side === 'LONG' ? 'positive' : 'negative'}"><strong>${pos.side}</strong></td>
+                                    <td>${pos.leverage}x</td>
+                                    <td>$${pos.entry.toFixed(2)}</td>
+                                    <td>$${pos.current_price.toFixed(2)}</td>
+                                    <td>$${pos.margin.toFixed(2)}</td>
+                                    <td class="${pnlColor}"><strong>${pos.unrealized_pnl >= 0 ? '+' : ''}$${pos.unrealized_pnl.toFixed(2)} (${pos.pnl_percentage}%)</strong></td>
+                                </tr>
+                            </table>
+                        `;
+                        document.getElementById('marginAlloc').innerText = `$${pos.margin.toFixed(2)} (25%)`;
+                    } else {
+                        posContainer.innerHTML = `<div style="padding: 10px; color: #848e9c; text-align: center;">Scanning order books for high-conviction setup...</div>`;
+                        document.getElementById('marginAlloc').innerText = `$0.00 (25%)`;
+                    }
 
-        function renderActivePositionRow() {
-            const tbody = document.getElementById('active-pos-table-body');
-            if (!tbody) return;
+                    // Update History Table
+                    let historyHtml = '';
+                    if (data.trades_history.length === 0) {
+                        historyHtml = `<tr><td colspan="8" style="text-align: center; color: #848e9c;">No completed trades yet.</td></tr>`;
+                    } else {
+                        data.trades_history.forEach(h => {
+                            let pnlClass = h.raw_pnl >= 0 ? 'positive' : 'negative';
+                            historyHtml += `
+                                <tr>
+                                    <td>${h.time}</td>
+                                    <td>${h.pair}</td>
+                                    <td class="${h.side === 'LONG' ? 'positive' : 'negative'}">${h.side}</td>
+                                    <td>${h.leverage}</td>
+                                    <td>${h.open_price}</td>
+                                    <td>${h.close_price}</td>
+                                    <td class="${pnlClass}"><strong>${h.pnl}</strong></td>
+                                    <td><span style="font-size:10px; background:#21262d; padding:2px 6px; border-radius:3px;">${h.trigger}</span></td>
+                                </tr>
+                            `;
+                        });
+                    }
+                    document.getElementById('historyTableBody').innerHTML = historyHtml;
 
-            if (!activePosition) {
-                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #8b949e; padding: 12px;">No active position open. Multi-agent engine scanning market...</td></tr>`;
-                return;
-            }
+                    // Update Telemetry Logs
+                    let telemetryHtml = '';
+                    data.telemetry.forEach(t => { telemetryHtml += `${t}<br>`; });
+                    document.getElementById('telemetryLog').innerHTML = telemetryHtml;
 
-            const currP = prices[activePosition.symbol];
-            const diffPct = ((currP - activePosition.entryPrice) / activePosition.entryPrice) * (activePosition.side === 'LONG' ? 1 : -1);
-            const pnlPct = (diffPct * activePosition.leverage * 100).toFixed(1);
-            const pnlVal = (activePosition.margin * (pnlPct / 100)).toFixed(2);
-            const isGreen = pnlVal >= 0;
-
-            tbody.innerHTML = `
-                <tr>
-                    <td class="gold bold">[${activePosition.agentName}]</td>
-                    <td class="bold text-white">${activePosition.symbol}</td>
-                    <td><span class="${activePosition.side === 'LONG' ? 'green' : 'red'} bold">${activePosition.side}</span></td>
-                    <td>${activePosition.leverage}x</td>
-                    <td>$${activePosition.entryPrice.toFixed(2)}</td>
-                    <td class="bold text-white">$${currP.toFixed(2)}</td>
-                    <td>$${activePosition.margin.toFixed(2)}</td>
-                    <td class="${isGreen ? 'green' : 'red'} bold">${isGreen ? '+' : ''}$${pnlVal} (${isGreen ? '+' : ''}${pnlPct}%)</td>
-                    <td style="text-align: right;">
-                        <button class="btn btn-red" style="padding: 2px 6px; font-size: 9px;" onclick="closeActivePosition('MANUAL_CLOSE')">CLOSE</button>
-                    </td>
-                </tr>
-            `;
-        }
-
-        function closeActivePosition(triggerReason = 'AUTO_TP') {
-            if (!activePosition) return;
-
-            const currP = prices[activePosition.symbol];
-            const diffPct = ((currP - activePosition.entryPrice) / activePosition.entryPrice) * (activePosition.side === 'LONG' ? 1 : -1);
-            const pnlPct = diffPct * activePosition.leverage * 100;
-            const pnlVal = parseFloat((activePosition.margin * (pnlPct / 100)).toFixed(2));
-            const isProfit = pnlVal >= 0;
-
-            equity = parseFloat((equity + pnlVal).toFixed(2));
-
-            tradeHistory.unshift({
-                time: new Date().toLocaleTimeString(),
-                symbol: activePosition.symbol,
-                side: activePosition.side,
-                leverage: `${activePosition.leverage}x`,
-                openPrice: activePosition.entryPrice,
-                closePrice: currP,
-                pnl: pnlVal,
-                isProfit: isProfit,
-                trigger: triggerReason
-            });
-            renderTradeHistory();
-
-            const eqValEl = document.getElementById('equity-val');
-            const realGainEl = document.getElementById('realized-gain');
-            if (eqValEl) eqValEl.innerText = `$${equity.toFixed(2)}`;
-            if (realGainEl) {
-                const totalGain = (equity - startingEquity).toFixed(2);
-                realGainEl.innerText = `${totalGain >= 0 ? '+' : ''}$${totalGain} REALIZED PROFIT`;
-            }
-
-            if (isProfit) {
-                const vaultGrid = document.querySelector('.vault-grid');
-                if (vaultGrid) {
-                    const closeBox = document.createElement('div');
-                    closeBox.className = 'vault-box';
-                    closeBox.innerHTML = `<div class="bold text-white">${activePosition.symbol.replace('USDT','')}</div><div style="font-size:9px; color:#8b949e;">${activePosition.leverage}x ${activePosition.side}</div><div class="green bold">+$${pnlVal.toFixed(0)}</div>`;
-                    if (vaultGrid.children.length >= 5) vaultGrid.removeChild(vaultGrid.lastChild);
-                    vaultGrid.prepend(closeBox);
-                }
-            }
-
-            const logContainer = document.getElementById('agent-log-container');
-            if (logContainer) {
-                const closeLog = document.createElement('div');
-                closeLog.className = 'log-entry';
-                closeLog.innerHTML = `<strong style="color:${isProfit ? '#00e676' : '#ff5252'};">[${triggerReason}]:</strong> Closed ${activePosition.symbol} @ $${currP.toFixed(2)} (${isProfit ? '+' : ''}$${pnlVal.toFixed(2)})`;
-                logContainer.prepend(closeLog);
-            }
-
-            activePosition = null;
-            renderActivePositionRow();
-        }
-
-        function renderTradeHistory() {
-            const tbody = document.getElementById('trade-history-tbody');
-            const countLabel = document.getElementById('total-trades-count');
-            if (!tbody) return;
-
-            if (countLabel) countLabel.innerText = `${tradeHistory.length} TRADES LOGGED`;
-
-            tbody.innerHTML = tradeHistory.map(t => `
-                <tr>
-                    <td style="color: #8b949e;">${t.time}</td>
-                    <td class="bold text-white">${t.symbol}</td>
-                    <td class="${t.side === 'LONG' ? 'green' : 'red'} bold">${t.side}</td>
-                    <td>${t.leverage}</td>
-                    <td>$${t.openPrice.toFixed(2)}</td>
-                    <td>$${t.closePrice.toFixed(2)}</td>
-                    <td class="${t.isProfit ? 'green' : 'red'} bold">${t.isProfit ? '+' : ''}$${t.pnl.toFixed(2)}</td>
-                    <td><span style="background:#1e242d; padding:2px 4px; border-radius:3px; color:${t.trigger === 'MANUAL_CLOSE' ? '#f0b90b' : '#00e676'};">${t.trigger}</span></td>
-                </tr>
-            `).join('');
-        }
-
-        function generateInitialCandles() {
-            candles = [];
-            let base = prices[currentPair];
-            for (let i = 0; i < 14; i++) {
-                let open = base + (Math.random() - 0.48) * (base * 0.008);
-                let close = open + (Math.random() - 0.47) * (base * 0.01);
-                let high = Math.max(open, close) + Math.random() * (base * 0.004);
-                let low = Math.min(open, close) - Math.random() * (base * 0.004);
-                candles.push({ open, high, low, close });
-                base = close;
-            }
-            renderCandlesticks();
-        }
-
-        function renderCandlesticks() {
-            const group = document.getElementById('candlestick-group');
-            if (!group) return;
-            group.innerHTML = '';
-
-            const allVals = candles.flatMap(c => [c.high, c.low]);
-            const minP = Math.min(...allVals);
-            const maxP = Math.max(...allVals);
-            const range = maxP - minP || 1;
-
-            const chartHeight = 150;
-            const candleWidth = 22;
-            const gap = 12;
-
-            candles.forEach((c, idx) => {
-                const x = 15 + idx * (candleWidth + gap);
-                const yHigh = chartHeight - ((c.high - minP) / range) * 120 + 15;
-                const yLow = chartHeight - ((c.low - minP) / range) * 120 + 15;
-                const yOpen = chartHeight - ((c.open - minP) / range) * 120 + 15;
-                const yClose = chartHeight - ((c.close - minP) / range) * 120 + 15;
-
-                const isBullish = c.close >= c.open;
-                const color = isBullish ? '#00e676' : '#ff5252';
-                const rectY = Math.min(yOpen, yClose);
-                const rectHeight = Math.max(3, Math.abs(yClose - yOpen));
-
-                const wick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                wick.setAttribute('x1', x + candleWidth / 2);
-                wick.setAttribute('y1', yHigh);
-                wick.setAttribute('x2', x + candleWidth / 2);
-                wick.setAttribute('y2', yLow);
-                wick.setAttribute('stroke', color);
-                wick.setAttribute('stroke-width', '1.5');
-
-                const body = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-                body.setAttribute('x', x);
-                body.setAttribute('y', rectY);
-                body.setAttribute('width', candleWidth);
-                body.setAttribute('height', rectHeight);
-                body.setAttribute('fill', color);
-                body.setAttribute('rx', '1');
-
-                group.appendChild(wick);
-                group.appendChild(body);
-            });
-        }
-
-        function startAutonomousAgentEngine() {
-            setInterval(() => {
-                if (!autoBotActive) return;
-
-                const logContainer = document.getElementById('agent-log-container');
-                const agentMatrix = [
-                    { name: 'SOL Volatility Scout', symbol: 'SOLUSDT', side: 'LONG', lev: 10, rationale: 'DEX Volume Surge + RSI Oversold' },
-                    { name: 'BTC Macro Quant Agent', symbol: 'BTCUSDT', side: 'LONG', lev: 25, rationale: 'Orderflow Imbalance + Perpetual Basis Premium' },
-                    { name: 'ETH Derivatives Bot', symbol: 'ETHUSDT', side: 'LONG', lev: 16, rationale: 'L2 Throughput Spike' },
-                    { name: 'AVAX Breakout Specialist', symbol: 'AVAXUSDT', side: 'SHORT', lev: 11, rationale: 'Resistance Rejection' },
-                    { name: 'BNB Liquidity Agent', symbol: 'BNBUSDT', side: 'LONG', lev: 20, rationale: 'Order Book Depth Delta > +4.2M' }
-                ];
-
-                if (!activePosition) {
-                    const agent = agentMatrix[Math.floor(Math.random() * agentMatrix.length)];
-                    const targetPair = agent.symbol;
-                    const side = agent.side;
-                    const lev = agent.lev;
-                    const entryP = prices[targetPair];
-                    const targetTp = side === 'LONG' ? entryP * 1.06 : entryP * 0.94;
-
-                    switchPair(targetPair);
-                    setLeverage(lev);
-
-                    const allocatedMargin = parseFloat((equity * 0.25).toFixed(2));
-
-                    activePosition = {
-                        agentName: agent.name,
-                        symbol: targetPair,
-                        side: side,
-                        leverage: lev,
-                        entryPrice: entryP,
-                        tpPrice: targetTp,
-                        margin: allocatedMargin
-                    };
-
-                    renderActivePositionRow();
-
-                    const entryLog = document.createElement('div');
-                    entryLog.className = 'log-entry';
-                    entryLog.innerHTML = `<strong style="color:#00e676;">[${agent.name}]:</strong> EXECUTED ${side} ON ${targetPair} ${lev}x @ $${entryP.toFixed(2)}`;
-                    if (logContainer) logContainer.prepend(entryLog);
-                    return;
-                }
-
-                const currP = prices[activePosition.symbol];
-                const diffPct = ((currP - activePosition.entryPrice) / activePosition.entryPrice) * (activePosition.side === 'LONG' ? 1 : -1);
-                const pnlPct = diffPct * activePosition.leverage * 100;
-
-                renderActivePositionRow();
-
-                if (pnlPct >= 18.0 || pnlPct <= -10.0) {
-                    closeActivePosition(pnlPct >= 18.0 ? 'AUTO_TAKE_PROFIT' : 'AUTO_STOP_LOSS');
-                }
-            }, 2500);
-        }
-
-        function switchPair(pair) {
-            currentPair = pair;
-            document.querySelectorAll('.ticker-card').forEach(c => c.classList.remove('active'));
-            const activeCard = document.getElementById(`card-${pair}`);
-            if (activeCard) activeCard.classList.add('active');
-
-            const pairTitle = document.getElementById('selected-pair-title');
-            const entryDisplay = document.getElementById('entry-price-display');
-            const markDisplay = document.getElementById('mark-price-display');
-
-            if (pairTitle) pairTitle.innerText = `${pair.replace('USDT', '')}/USDT PERPETUAL`;
-            if (entryDisplay) entryDisplay.innerText = `$${prices[pair]}`;
-            if (markDisplay) markDisplay.innerText = `$${prices[pair]}`;
-
-            generateInitialCandles();
-            renderOrderBook();
-        }
-
-        function setLeverage(lev) {
-            currentLeverage = lev;
-            const levLabel = document.getElementById('active-lev-label');
-            if (levLabel) levLabel.innerText = `${lev}x`;
-            document.querySelectorAll('.lev-grid button').forEach(b => {
-                b.className = 'btn btn-outline';
-                if (b.innerText === `${lev}x`) b.className = 'btn btn-gold';
-            });
-        }
-
-        function toggleMode() {
-            isPaperMode = !isPaperMode;
-            const btn = document.getElementById('mode-btn');
-            if (btn) {
-                if (isPaperMode) {
-                    btn.innerText = "PAPER RUN ($100.00)";
-                    btn.style.background = "rgba(0, 230, 118, 0.15)";
-                    btn.style.color = "#00e676";
-                } else {
-                    btn.innerText = "LIVE EXCHANGE MODE";
-                    btn.style.background = "rgba(255, 82, 82, 0.15)";
-                    btn.style.color = "#ff5252";
-                }
-            }
-        }
-
-        function startTickerStream() {
-            setInterval(() => {
-                Object.keys(prices).forEach(p => {
-                    const delta = (Math.random() - 0.48) * (prices[p] * 0.004);
-                    prices[p] = Math.max(0.01, parseFloat((prices[p] + delta).toFixed(2)));
+                    // Update Order Book
+                    let currentPrice = data.market_prices[currentSelectedPair];
+                    document.getElementById('chartTitle').innerText = `${currentSelectedPair} PERPETUAL`;
+                    document.getElementById('livePriceHeader').innerText = `$${currentPrice.toFixed(2)}`;
                     
-                    const el = document.getElementById(`t-price-${p}`);
-                    if (el) el.innerText = `$${prices[p]}`;
+                    let obHtml = '';
+                    for(let i=1; i<=5; i++) {
+                        let askPrice = (currentPrice + (i * 0.4)).toFixed(2);
+                        let bidPrice = (currentPrice - (i * 0.4)).toFixed(2);
+                        obHtml += `<tr><td class="negative">$${askPrice}</td><td>${(Math.random()*5).toFixed(2)}</td></tr>`;
+                    }
+                    for(let i=5; i>=1; i--) {
+                        let bidPrice = (currentPrice - (i * 0.4)).toFixed(2);
+                        obHtml += `<tr><td class="positive">$${bidPrice}</td><td>${(Math.random()*5).toFixed(2)}</td></tr>`;
+                    }
+                    document.getElementById('orderBookBody').innerHTML = obHtml;
+
+                    // Render Candlestick Chart SVG
+                    let svgContent = '';
+                    let baseP = currentPrice - 5;
+                    for(let i=0; i<18; i++) {
+                        let x = i * 33 + 12;
+                        let isGreen = Math.random() > 0.45;
+                        let color = isGreen ? '#0ecb81' : '#f6465d';
+                        let openY = 90 + (Math.random() * 40 - 20);
+                        let closeY = openY + (isGreen ? -15 : 15);
+                        let highY = Math.min(openY, closeY) - 12;
+                        let lowY = Math.max(openY, closeY) + 12;
+
+                        svgContent += `<line x1="${x}" y1="${highY}" x2="${x}" y2="${lowY}" stroke="${color}" stroke-width="1.5" />`;
+                        svgContent += `<rect x="${x-6}" y="${Math.min(openY, closeY)}" width="12" height="${Math.abs(closeY - openY)}" fill="${color}" rx="1" />`;
+                    }
+                    document.getElementById('candlestickSvg').innerHTML = svgContent;
                 });
-
-                const currentPrice = prices[currentPair];
-                const markDisplay = document.getElementById('mark-price-display');
-                if (markDisplay) markDisplay.innerText = `$${currentPrice}`;
-
-                if (candles.length > 0) {
-                    const last = candles[candles.length - 1];
-                    last.close = currentPrice;
-                    last.high = Math.max(last.high, currentPrice);
-                    last.low = Math.min(last.low, currentPrice);
-                    renderCandlesticks();
-                }
-
-                if (activePosition) {
-                    const entry = activePosition.entryPrice;
-                    const diffPct = ((currentPrice - entry) / entry) * (activePosition.side === 'LONG' ? 1 : -1) * activePosition.leverage * 100;
-                    const pnlAmount = (activePosition.margin * (diffPct / 100)).toFixed(2);
-
-                    const sign = pnlAmount >= 0 ? '+' : '';
-                    const pnlValEl = document.getElementById('active-pnl-val');
-                    const pnlPctEl = document.getElementById('active-pnl-pct');
-                    if (pnlValEl) pnlValEl.innerText = `${sign}$${pnlAmount}`;
-                    if (pnlPctEl) pnlPctEl.innerText = `(${sign}${diffPct.toFixed(1)}%)`;
-                }
-
-                renderOrderBook();
-            }, 1200);
         }
 
-        function renderOrderBook() {
-            const currP = prices[currentPair];
-            let asksHTML = '';
-            let bidsHTML = '';
-
-            for (let i = 4; i >= 1; i--) {
-                const p = (currP + i * (currP * 0.0008)).toFixed(2);
-                const s = (Math.random() * 30 + 5).toFixed(1);
-                asksHTML += `<tr class="red"><td>${p}</td><td style="text-align:right;">${s}</td></tr>`;
-            }
-
-            for (let i = 1; i <= 4; i++) {
-                const p = (currP - i * (currP * 0.0008)).toFixed(2);
-                const s = (Math.random() * 30 + 5).toFixed(1);
-                bidsHTML += `<tr class="green"><td>${p}</td><td style="text-align:right;">${s}</td></tr>`;
-            }
-
-            const asksEl = document.getElementById('ob-asks');
-            const bidsEl = document.getElementById('ob-bids');
-            if (asksEl) asksEl.innerHTML = asksHTML;
-            if (bidsEl) bidsEl.innerHTML = bidsHTML;
+        function manualClose() {
+            fetch('/api/close_position', { method: 'POST' })
+                .then(res => res.json())
+                .then(data => { console.log(data); });
         }
 
-        function executeTrade(side) {
-            const currP = prices[currentPair];
-            const entryDisplay = document.getElementById('entry-price-display');
-            const tpDisplay = document.getElementById('tp-price-display');
-            if (entryDisplay) entryDisplay.innerText = `$${currP}`;
-            if (tpDisplay) tpDisplay.innerText = `$${(currP * (side === 'LONG' ? 1.08 : 0.92)).toFixed(2)}`;
-
-            activePosition = {
-                agentName: 'Manual User',
-                symbol: currentPair,
-                side: side,
-                leverage: currentLeverage,
-                entryPrice: currP,
-                tpPrice: currP * (side === 'LONG' ? 1.08 : 0.92),
-                margin: parseFloat((equity * 0.25).toFixed(2))
-            };
-
-            const container = document.getElementById('agent-log-container');
-            if (container) {
-                const entry = document.createElement('div');
-                entry.className = 'log-entry';
-                entry.innerHTML = `<strong style="color:#00e676;">[User Manual Override]:</strong> Placed ${side} on ${currentPair} @ $${currP}`;
-                container.prepend(entry);
-            }
-        }
+        setInterval(updatePlatformState, 2000);
+        updatePlatformState();
     </script>
 </body>
 </html>
